@@ -20,7 +20,6 @@
 #include <Winternl.h>
 #include <wchar.h>
 
-#include "GlobLog.h"
 
 #define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 
@@ -34,6 +33,7 @@ typedef unsigned char u_int8_t;
 // any state we capture + log + extra 
 // emulator, decision logic verbose data
 typedef struct _ExecutionBlock {
+	DWORD64 BlockFrom;
 	ULONG InternalID;
 	ULONG TID;
 	HANDLE hThr;
@@ -41,6 +41,7 @@ typedef struct _ExecutionBlock {
 	csh handle;
 	cs_insn *insn;
 	size_t csLen;
+	
 	PEXCEPTION_POINTERS pExeption; // filed out on entry to handler
 								   //PCONTEXT pContextRecord;	// secondary context acquired by getthreadcontext
 } ExecutionBlock, *PExecutionBlock;
@@ -53,3 +54,5 @@ void EnterThreadTable(ULONGLONG tid, bool Inst);
 
 void _DumpContext(PExecutionBlock ExceptionInfo);
 void DoRandomTestStuff(ULONG Arg);
+
+#include "GlobLog.h"

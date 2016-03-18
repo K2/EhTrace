@@ -1,7 +1,8 @@
 #include "stdafx.h"
 
 //SRWLOCK ThrLock;
-
+//blah just use a table, back to STL hash later or something
+PExecutionBlock *CtxTable;
 ULONGLONG *ThrInstTable;
 ULONGLONG *ThrTable;
 ULONGLONG BitsInSet;
@@ -22,8 +23,17 @@ bool InitThreadTable(ULONGLONG Cnt)
 		return false;
 	}
 
+	CtxTable = (PExecutionBlock *)malloc(Cnt * sizeof(PExecutionBlock));
+	if (!CtxTable)
+	{
+		free(ThrInstTable);
+		free(ThrTable);
+		return false;
+	}
+
 	memset(ThrTable, 0, (Cnt >> WORD_BIT_SHIFT) * sizeof(ULONGLONG));
 	memset(ThrInstTable, 0, (Cnt >> WORD_BIT_SHIFT) * sizeof(ULONGLONG));
+	memset(CtxTable, 0, Cnt * sizeof(PExecutionBlock));
 	return true;
 }
 

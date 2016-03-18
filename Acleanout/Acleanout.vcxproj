@@ -99,7 +99,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\support\capstone;..\..\EhTrace</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\support\capstone;..\..\EhTrace;C:\Users\files\Documents\GitHub\EhTrace\support\capstone</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

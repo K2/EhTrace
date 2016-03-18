@@ -55,8 +55,9 @@ size_t KnownThreadCount = 0;
 size_t UnTracedThreadCount = 0;
 HANDLE hPulseThread;
 
-static DWORD dwTlsIndex = TLS_OUT_OF_INDEXES;
+static DWORD th32ThreadIDdwTlsIndex = TLS_OUT_OF_INDEXES;
 extern "C" static DWORD NoLogThrId = 0;
+extern PExecutionBlock *CtxTable;
 
 PExecutionBlock InitBlock(ULONG ID)
 {
@@ -66,9 +67,11 @@ PExecutionBlock InitBlock(ULONG ID)
 		wprintf(L"Memory allocation failed.\n");
 		return NULL;
 	}
+	pCtx->TID = ID;
 	pCtx->InternalID = ID;
 	pCtx->SEQ = 0;
 	pCtx->hThr = INVALID_HANDLE_VALUE;
+	pCtx->BlockFrom = 0;
 
 	cs_opt_skipdata skipdata = { "db", };
 	if (cs_open(CS_ARCH_X86, CS_MODE_64, &pCtx->handle) != CS_ERR_OK)
@@ -82,16 +85,9 @@ PExecutionBlock InitBlock(ULONG ID)
 	pCtx->insn = cs_malloc(pCtx->handle);
 	pCtx->csLen = 32;
 
+	CtxTable[ID] = pCtx;
+
 	return pCtx;
-}
-
-bool AttachThread()
-{
-	bool rv = false;
-
-
-
-	return rv;
 }
 
 bool InstallThread(ULONG  th32ThreadID)
@@ -104,10 +100,6 @@ bool InstallThread(ULONG  th32ThreadID)
 		return false;
 	}
 
-	if (!TlsSetValue(dwTlsIndex, pCtx))
-		wprintf(L"TlsSetValue error, now what?");
-
-	pCtx->TID = th32ThreadID;
 	KnownThreadCount++;
 
 	// OpenThreads for neighbor threads
@@ -241,6 +233,8 @@ void _DumpEFlags(_EFlags efl)
 	if (efl.ID)
 		wprintf(L" ID ");
 
+	wprintf(L"\n");
+
 }
 
 void _DumpContext(PExecutionBlock pXblock)
@@ -256,7 +250,7 @@ void _DumpContext(PExecutionBlock pXblock)
 	// TODO: insn needs to be thread specific
 	if (csRVA && pXblock && cs_disasm_iter(pXblock->handle, &csLocation, &pXblock->csLen, &csRVA, pXblock->insn))
 	{
-		printf("%s %s   | Rip 0x%.16llx EFlags 0x%.8x\n", pXblock->insn->mnemonic, pXblock->insn->op_str, pCtx->Rip, pCtx->EFlags);
+		printf("\n%s %s   | Rip 0x%.16llx (RipFrom 0x%.16llx) EFlags 0x%.8x ", pXblock->insn->mnemonic, pXblock->insn->op_str, pCtx->Rip, pXblock->BlockFrom, pCtx->EFlags);
 		_DumpEFlags(efl);
 		wprintf(L"\t\t Rax 0x%.16llx, Rcx 0x%.16llx, Rdx 0x%.16llx, Rbx 0x%.16llx\n", pCtx->Rax, pCtx->Rcx, pCtx->Rdx, pCtx->Rbx);
 		wprintf(L"\t\t Rsp 0x%.16llx, Rbp 0x%.16llx, Rsi 0x%.16llx, Rdi 0x%.16llx\n", pCtx->Rsp, pCtx->Rbp, pCtx->Rsi, pCtx->Rdi);
@@ -274,6 +268,9 @@ void _DumpContext(PExecutionBlock pXblock)
 LONG64 Counter = 0;
 LONG WINAPI vEhTracer(PEXCEPTION_POINTERS ExceptionInfo)
 {
+	PExecutionBlock pCtx = NULL;
+	ULONG64 dwThr = __readgsdword(0x48);
+
 	// check if my thread is a thread that's already entered into the VEH logging something lower on the stack
 	// this means were probably getting an exception for something we did ourselves during the logging 
 	// which is sort of pointless
@@ -282,10 +279,7 @@ LONG WINAPI vEhTracer(PEXCEPTION_POINTERS ExceptionInfo)
 		return EXCEPTION_CONTINUE_SEARCH;
 
 	// no re-entrance while servicing exceptions
-	EnterThreadTable(__readgsdword(0x48) & WORD_MOD_SIZE, false);
-
-	// safe to get TLS if we want 
-	//lpvData = TlsGetValue(dwTlsIndex);
+	EnterThreadTable(dwThr & WORD_MOD_SIZE, false);
 
 #ifdef CPP_HASH
 	PExecutionBlock pXblock = NULL;
@@ -302,13 +296,23 @@ LONG WINAPI vEhTracer(PEXCEPTION_POINTERS ExceptionInfo)
 	pXblock->pExeption = ExceptionInfo;
 #endif
 
-	LogRIP(ExceptionInfo);
+	if (CtxTable != NULL && CtxTable[dwThr] != NULL)
+		pCtx = CtxTable[dwThr];
+	else
+		pCtx = InitBlock(dwThr);
 
-	//_DumpContext(pXblock);
+	pCtx->pExeption = ExceptionInfo;
+
+	LogRIP(pCtx);
+
+	//_DumpContext(pCtx);
+
 	ExceptionInfo->ContextRecord->EFlags |= 0x100; // single step
 	ExceptionInfo->ContextRecord->Dr7 |= 0x300; // setup branch tracing 
-	
-	ExitThreadTable(__readgsdword(0x48) & WORD_MOD_SIZE, false);
+
+	pCtx->BlockFrom = ExceptionInfo->ContextRecord->Rip;
+
+	ExitThreadTable(dwThr & WORD_MOD_SIZE, false);
 
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
@@ -334,9 +338,6 @@ __declspec(dllexport) int APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID
 		// logger will spin the thread if logs are not picked up fast enough
 		SetupLogger(STRACE_LOG_BUFFER_SIZE);
 		Initalize();
-
-		if ((dwTlsIndex == TLS_OUT_OF_INDEXES) && (dwTlsIndex = TlsAlloc()) == TLS_OUT_OF_INDEXES)
-			wprintf(L"unable to use TLS here, I guess were going to leak!");
 
 		InstallThread(__readgsdword(0x48));
 		hPulseThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PulseThreads, 0, 0, NULL);

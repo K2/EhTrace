@@ -101,7 +101,7 @@ extern "C" void *ConnectLogBuffer(ULONG64 LOG_SIZE)
 
 LONG64 Zero = 0;
 
-extern "C" void LogRIP(PEXCEPTION_POINTERS pEx)
+extern "C" void LogRIP(PExecutionBlock pEx)
 {
 	if (g_events == NULL)
 		return;
@@ -112,8 +112,10 @@ extern "C" void LogRIP(PEXCEPTION_POINTERS pEx)
 	
 	Step_Event se;
 	se.u.TID = __readgsdword(0x48);
-	se.u.eFlags = pEx->ContextRecord->EFlags;
-	se.RIP = pEx->ContextRecord->Rip;
+	se.u.eFlags = pEx->pExeption->ContextRecord->EFlags;
+	se.RIP = pEx->pExeption->ContextRecord->Rip;
+	se.FromRIP = pEx->BlockFrom;	
+	se.RSP = pEx->pExeption->ContextRecord->Rsp;
 
 	//LONG64 index = InterlockedAdd64((volatile long long *)g_WriteIdx, 2);
 	ULONG64 index = InterlockedIncrement64((volatile long long *)g_WriteIdx);
@@ -132,6 +134,10 @@ extern "C" void LogRIP(PEXCEPTION_POINTERS pEx)
 		if (Zero != 0)
 			Zero = 0;
 	}
+	// if were here we won the slot so it should be available to just write
+	curr->FromRIP = se.FromRIP;
+	curr->RSP = se.RSP;
+
 	InterlockedIncrement64((volatile long long *)g_WaitingRecords);
 }
 
@@ -196,7 +202,7 @@ extern "C" PStep_Event LogPopMany(LONG64 *Returned)
 // until we implement something like a log-bitmap that
 // configures who to log, we'll just log it all to test
 // our limits
-extern "C" Trace_Event* Log(PEXCEPTION_POINTERS pEx)
+extern "C" Trace_Event* Log(PExecutionBlock pEx)
 {
 	if (g_events == NULL)
 		return NULL;
@@ -235,7 +241,7 @@ extern "C" Trace_Event* Log(PEXCEPTION_POINTERS pEx)
 	e->Seq = (ULONG)*Seq;
 	e->Tid = __readgsdword(0x48);					// Get thread ID
 
-	memcpy(e->Registers, (LPVOID) ((BYTE *)pEx->ContextRecord + offsetof(struct _CONTEXT, Rax)), sizeof(e->Registers));
+	memcpy(e->Registers, (LPVOID) ((BYTE *)pEx->pExeption->ContextRecord + offsetof(struct _CONTEXT, Rax)), sizeof(e->Registers));
 
 	_InterlockedIncrement64((volatile long long *)g_WaitingRecords);
 

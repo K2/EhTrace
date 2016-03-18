@@ -38,6 +38,8 @@ typedef struct _Step_Event {
 		ULONG64 Synth;
 	} u;
 	ULONG64 RIP;		// we could steal some high bits here
+	ULONG64 RSP;		// use this for something ! ;)
+	ULONG64 FromRIP;
 } Step_Event, *PStep_Event;
 
 typedef struct _Trace_Event
@@ -65,8 +67,8 @@ static const int STRACE_LOG_BUFFER_SIZE = (1024*1024);
 extern "C" void* SetupLogger(ULONG64 LOG_SIZE);
 extern "C" void* ConnectLogBuffer(ULONG64 LOG_SIZE);
 
-extern "C" Trace_Event* Log(PEXCEPTION_POINTERS pEx);
-extern "C" void LogRIP(PEXCEPTION_POINTERS pEx);
+extern "C" Trace_Event* Log(PExecutionBlock pEx);
+extern "C" void LogRIP(PExecutionBlock pEx);
 
 extern "C" Trace_Event* LogPop();
 extern "C" Step_Event*  LogPopIP();
