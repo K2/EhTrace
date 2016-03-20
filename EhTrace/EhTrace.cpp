@@ -23,22 +23,21 @@
 
 
 /*
-	
 	K2: Blockfighting with a hooker... or so it goes.
 
 	Leverage block stepping to simplify program introspection such that we may analyze
 	code coverage and execution in detail.  
 
-	Sort of a self-debugging that is fast and able to operate without any code patches, traditional 
-	hooks/detours so that check summing will match as needed.
+	Sort of a self-debugging that is fast and able to operate without any code patches, 
+	traditional hooks/detours so that check summing will match as needed.
 
-	In a way feels like code-wars/core-wars in a way.  Initial release is targeted towards friendly binaries.
-
+	In a way feels like code-wars/core-wars in a way.  
+	Initial release is targeted towards friendly binaries.
 */
-
 // blockfighting defenses? async code aync completion, defend setthreadcontext, 
 // Use page protection to detect/defend execution of code?
-// redirect attempts to start new threads to ensure that they start suspended and are able to be tracked before execution
+// redirect attempts to start new threads to ensure that they 
+// start suspended and are able to be tracked before execution
 // xsave scanning
 // pop/ret
 // exception handling
@@ -55,7 +54,6 @@ size_t KnownThreadCount = 0;
 size_t UnTracedThreadCount = 0;
 HANDLE hPulseThread;
 
-static DWORD th32ThreadIDdwTlsIndex = TLS_OUT_OF_INDEXES;
 extern "C" static DWORD NoLogThrId = 0;
 extern PExecutionBlock *CtxTable;
 
@@ -281,30 +279,18 @@ LONG WINAPI vEhTracer(PEXCEPTION_POINTERS ExceptionInfo)
 	// no re-entrance while servicing exceptions
 	EnterThreadTable(dwThr & WORD_MOD_SIZE, false);
 
-#ifdef CPP_HASH
-	PExecutionBlock pXblock = NULL;
-
-	if (!XBlocks->contains(tid))
-	{
-		// new thread
-		if (pXblock == NULL)
-			pXblock = InitBlock(tid);
-	}
-	else
-		pXblock = XBlocks->find(tid);
-
-	pXblock->pExeption = ExceptionInfo;
-#endif
-
+	// TODO: just put the whole context in the array to remove an indirect anyhow
 	if (CtxTable != NULL && CtxTable[dwThr] != NULL)
 		pCtx = CtxTable[dwThr];
-	else
-		pCtx = InitBlock(dwThr);
+	//else
+		//pCtx = InitBlock(dwThr);
 
 	pCtx->pExeption = ExceptionInfo;
 
+	// since we like to do logging
 	LogRIP(pCtx);
 
+	// to dump info 
 	//_DumpContext(pCtx);
 
 	ExceptionInfo->ContextRecord->EFlags |= 0x100; // single step
