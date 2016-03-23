@@ -10,7 +10,21 @@ is no requirement to use a debugger or enable debug/trace MSR capabilities.
 
 I'll be presenting/releasing the first release @ CanSecWest this year, updates to follow.
 
+CSW16 demo of notepad generated this trace, no symbols or dump of assembly yet (very soon!)
+![BB graph/coverage CSW16 run of notepad.exe](https://raw.githubusercontent.com/K2/EhTrace/master/support/notepad-from-CSW.PNG)
+
+
 ## Associated projects
 
-* C# Symbol management
-* C# GUI
+* EhTrace (exe is just for testing, build as DLL) <-- meat and potatoes injection DLL that will do your blockfighting ;)
+* Acleanout dump's the logs from shared memory that are created by EhTrace
+* Agasm is a Glue/Dissassembly tool that might be better to use from WPFx to generate graphs (just easier to do sym's and capstone in one lib)
+* Aload can load a DLL
+* Aprep is a test case EXE (basically EhTrace.dll setup to build as an EXE)
+* Amerger is probably just garbage not going to use
+* Dia2Sharp is an attempt to not use C++/CLI since I think most people don't know/like it, but maybe not since using C++/CLI seems faster
+* TestDump2 is a test of the Dia2Sharp
+* WPFx is just a lil test thing just using MSAGL Graphing (soon to get GraphMaps) until I bring in a more substantional GUI (probably based on Gemini/AvalonDock/Caliburn/MahApps/MaterialDesign (whew GUI's need a lot of 3rd party ;)
+
+
+More help/info on how todo whatever soon. 
