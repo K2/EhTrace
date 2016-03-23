@@ -15,7 +15,10 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
-        <Button MinHeight="20" Width="80" Content="Load..." x:Name="btnLoad" Click="btnLoad_Click" />
+        <ToolBar Grid.ColumnSpan="2" MinHeight="20"  >
+            <Button  Content="Load" x:Name="btnLoad" Click="btnLoad_Click" ToolTip="Load the data (.bin) which was dumped from Acleanout" />
+            <Button  Content="Symbols" x:Name="btnSymbols" Click="btnSymbols_Click" ToolTip="Load the symbols to support the graph generation" />
+        </ToolBar>
         <DockPanel 
             Grid.Row="1"
             Grid.ColumnSpan="2"            

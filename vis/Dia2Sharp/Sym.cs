@@ -81,7 +81,7 @@ namespace Dia2Sharp
             if (Detail == null || string.IsNullOrWhiteSpace(Detail.name))
                 return;
 
-            WriteLine($"{Detail.undecoratedName} ({Detail.name}) Length: {Detail.length} RVA: {Detail.targetRelativeVirtualAddress} VA: {Detail.targetVirtualAddress}");
+            //WriteLine($"{Detail.undecoratedName} ({Detail.name}) Length: {Detail.length} RVA: {Detail.targetRelativeVirtualAddress} VA: {Detail.targetVirtualAddress}");
 
             Detail.findChildren(SymTagEnum.SymTagNull, null, 0, out EnumSymbols);
             do
@@ -94,8 +94,8 @@ namespace Dia2Sharp
 
                 if (Symbol.type != null)
                     Args.Add(Symbol.type.name);
-                else
-                    WriteLine($"{Symbol.undecoratedName} ({Symbol.name}) @ {Symbol.virtualAddress:X} Length: {Symbol.length} ");
+                //else
+                //    WriteLine($"{Symbol.undecoratedName} ({Symbol.name}) @ {Symbol.virtualAddress:X} Length: {Symbol.length} ");
 
             } while (childrenFetched == 1);
         }
@@ -112,7 +112,7 @@ namespace Dia2Sharp
             if (Detail == null || string.IsNullOrWhiteSpace(Detail.name))
                 return;
 
-            WriteLine($"{Detail.undecoratedName} ({Detail.name}) Length: {Detail.length} RVA: {Detail.targetRelativeVirtualAddress} VA: {Detail.targetVirtualAddress}");
+            //WriteLine($"{Detail.undecoratedName} ({Detail.name}) Length: {Detail.length} RVA: {Detail.targetRelativeVirtualAddress} VA: {Detail.targetVirtualAddress}");
 
             Detail.findChildren(SymTagEnum.SymTagNull, null, 0, out EnumSymbols);
             do
@@ -123,19 +123,21 @@ namespace Dia2Sharp
 
                 if (Symbol.type != null)
                     Args.Add(Symbol.type.name);
-                else
-                    WriteLine($"{Symbol.undecoratedName} ({Symbol.name}) @ {Symbol.virtualAddress:X} Length: {Symbol.length} ");
+              //  else
+              //      WriteLine($"{Symbol.undecoratedName} ({Symbol.name}) @ {Symbol.virtualAddress:X} Length: {Symbol.length} ");
 
             } while (childrenFetched == 1);
         }
 
-        public int Enum(string arg)
+        public List<MinSym> EnumSymsInFileWithVAOrder(string arg, ulong BaseVA, ulong Length)
         {
             IDiaEnumSymbols EnumSymbols = null;
-            IDiaSymbol Master = null;
+            IDiaSymbol Master = null, Sub = null;
             IDiaEnumTables tables = null;
             int level = 2;
             uint compileFetched = 0;
+
+            var rv = new List<MinSym>();
 
             //DebugHelp.SymFindDebugInfoFile(hCurrentProcess, SymPath, arg, )
 
@@ -145,10 +147,61 @@ namespace Dia2Sharp
             foo.openSession(out Session);
 
             if (Session == null)
-                return -1;
+                return null;
+
+            Session.loadAddress = BaseVA;
+
+            var CurrVA = BaseVA;
+            var End = BaseVA + Length;
+
+            Session.findSymbolByVA(CurrVA, SymTagEnum.SymTagNull, out Master);
+            do {
+
+                Session.findChildren(Master, SymTagEnum.SymTagNull, null, 0, out EnumSymbols);
+                var tot1 = EnumSymbols.count;
+                int cnt = 0;
+
+                ForegroundColor = ConsoleColor.White;
+
+                do {
+                    cnt++;
+                    EnumSymbols.Next(1, out Sub, out compileFetched);
+                    if (Sub == null)
+                        continue;
+
+
+                } while (cnt < tot1);
+
+            } while (Master != null);
+
+            return rv;
+        }
+
+        public List<MinSym> Enum(string arg)
+        {
+            IDiaEnumSymbols EnumSymbols = null;
+            IDiaSymbol Master = null;
+            IDiaEnumTables tables = null;
+            int level = 2;
+            uint compileFetched = 0;
+
+            var rv = new List<MinSym>();
+
+            var foo = new Dia2Lib.DiaSource();
+            foo.loadDataForExe(arg, SymPath, null);
+            foo.openSession(out Session);
+
+            if (Session == null)
+                return null;
 
             Session.loadAddress = 0;
-            uint rva = 0;
+
+            var GlobalScope = Session.globalScope;
+
+
+
+
+
 
             //do
             //{
@@ -162,25 +215,18 @@ namespace Dia2Sharp
             //            EnumSymbols.Next(1, out Master, out compileFetched);
             //            if (Master == null)
             //                continue;
-
             //            ForegroundColor = ConsoleColor.White;
-
             //            foreach (var pr in typeof(IDiaSymbol).LinqPublicProperties())
             //            {
             //                WriteLine($"{pr.Name} = {pr.GetValue(Master)}");
             //            }
-
             //            //foreach (var fn in typeof(IDiaSymbol).LinqPublicFunctions())
             //            //{
             //            //    //if (fn.Name.Contains("get"))
             //            //        WriteLine($"{fn.Name} = {fn.Invoke(Master, null)}");
             //            //}
             //            // DumpSymbol<IDiaSymbol>(Master, ref level);
-
             //        } while (curr1++ < tot1);
-
-
-
             //        //foreach (var pr in typeof(IDiaSymbol).LinqPublicProperties())
             //        //    WriteLine($"{pr.Name} = {pr.GetValue(Master)}");
             //    }
@@ -195,27 +241,24 @@ namespace Dia2Sharp
 
 
 
-
-
-            var GlobalScope = Session.globalScope;
-
             IDiaEnumDebugStreams DebugStreams;
-
+            /*
             Session.getEnumDebugStreams(out DebugStreams);
             for (int i = 0; i < DebugStreams.count; i++)
             {
                 var ds = DebugStreams.Item(i);
-                foreach (var pr in typeof(IDiaEnumDebugStreamData).LinqPublicProperties())
-                    WriteLine($"{pr.Name} = {pr.GetValue(ds)}");
+            //    foreach (var pr in typeof(IDiaEnumDebugStreamData).LinqPublicProperties())
+            //        WriteLine($"{pr.Name} = {pr.GetValue(ds)}");
             }
 
             Session.getEnumTables(out tables);
             for (int i = 0; i < tables.count; i++)
             {
                 var ds = tables.Item(i);
-                foreach (var pr in typeof(IDiaTable).LinqPublicProperties())
-                    WriteLine($"{pr.Name} = {pr.GetValue(ds)}");
+            //    foreach (var pr in typeof(IDiaTable).LinqPublicProperties())
+            //        WriteLine($"{pr.Name} = {pr.GetValue(ds)}");
             }
+            */
             GlobalScope.findChildren(SymTagEnum.SymTagNull, null, 0, out EnumSymbols);
             var tot = EnumSymbols.count;
             var curr = 0;
@@ -227,29 +270,33 @@ namespace Dia2Sharp
 
                 ForegroundColor = ConsoleColor.White;
 
-                //foreach (var pr in typeof(IDiaSymbol).LinqPublicProperties())
-                    //WriteLine($"{pr.Name} = {pr.GetValue(Master)}");
+                foreach (var pr in typeof(IDiaSymbol).LinqPublicProperties())
+                    WriteLine($"{pr.Name} = {pr.GetValue(Master)}");
 
-                DumpSymbol<IDiaSymbol>(Master, level);
+                var subList = DumpSymbol<IDiaSymbol>(Master, level);
+                rv.AddRange(subList);
+            } while (compileFetched == 1);
 
-            } while (curr++ < tot);
+            rv.Sort();
 
-            return 0;
+            return rv;
         }
 
-        void DumpSymbol<T>(T Symbol, int level)
+        List<MinSym> DumpSymbol<T>(T Symbol, int level)
         {
             IDiaEnumSymbols EnumInner; 
             IDiaSymbol IsInner;
             var curr = 0;
             if (Symbol == null)
-                return;
+                return null;
             uint tmp = 0;
+
+            var rv = new List<MinSym>();
 
             var ds = Symbol;
             foreach (var pr in typeof(T).LinqPublicProperties())
             {
-                WriteLine($"{pr.Name} = {pr.GetValue(ds)}");
+                //WriteLine($"{pr.Name} = {pr.GetValue(ds)}");
                 if (ds is IDiaSymbol)
                 {
                     (ds as IDiaSymbol).findChildren(SymTagEnum.SymTagNull, null, 0, out EnumInner);
@@ -263,17 +310,17 @@ namespace Dia2Sharp
                             if (IsInner == null)
                                 continue;
 
-                            DumpSymbol(IsInner, level);
+                            var subList = DumpSymbol(IsInner, level);
+                            rv.AddRange(subList);
 
-
-                            //foreach (var prx in typeof(IDiaSymbol).LinqPublicProperties())
-                                //WriteLine($"{pr.Name} = {pr.GetValue(IsInner)}");
+                            foreach (var prx in typeof(IDiaSymbol).LinqPublicProperties())
+                                WriteLine($"{pr.Name} = {pr.GetValue(IsInner)}");
                                 
                         } while (curr++ < tot);
                     }
                 }
             }
-
+            return rv;
 
             //if (Symbol is IDiaSymbol)
             //{

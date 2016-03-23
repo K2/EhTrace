@@ -55,16 +55,19 @@ size_t UnTracedThreadCount = 0;
 HANDLE hPulseThread;
 
 extern "C" static DWORD NoLogThrId = 0;
-extern PExecutionBlock *CtxTable;
+extern ExecutionBlock *CtxTable;
 
 PExecutionBlock InitBlock(ULONG ID)
 {
-	PExecutionBlock pCtx = (PExecutionBlock)_aligned_malloc(sizeof(ExecutionBlock), MEMORY_ALLOCATION_ALIGNMENT);
+	PExecutionBlock pCtx = &CtxTable[ID];
+
+	/*
 	if (NULL == pCtx)
 	{
 		wprintf(L"Memory allocation failed.\n");
 		return NULL;
 	}
+	*/
 	pCtx->TID = ID;
 	pCtx->InternalID = ID;
 	pCtx->SEQ = 0;
@@ -83,12 +86,10 @@ PExecutionBlock InitBlock(ULONG ID)
 	pCtx->insn = cs_malloc(pCtx->handle);
 	pCtx->csLen = 32;
 
-	CtxTable[ID] = pCtx;
-
 	return pCtx;
 }
 
-bool InstallThread(ULONG  th32ThreadID)
+bool InstallThread(ULONG th32ThreadID, int reason)
 {
 	PExecutionBlock pCtx = NULL;
 
@@ -107,7 +108,7 @@ bool InstallThread(ULONG  th32ThreadID)
 	CONTEXT ContextRecord = { 0 };
 	ContextRecord.ContextFlags = CONTEXT_ALL;
 
-	wprintf(L"attaching to thread ID: %d in process %d\n", th32ThreadID, GetCurrentProcessId());
+	wprintf(L"%d) attaching to thread ID: %d in process %d\n", reason, th32ThreadID, GetCurrentProcessId());
 
 	if (!GetThreadContext(pCtx->hThr, &ContextRecord))
 		wprintf(L"unable to get context on thread %d\n", th32ThreadID);
@@ -147,7 +148,7 @@ void PulseThreads()
 						&& thread_entry32.th32ThreadID != NoLogThrId)
 					{
 						if (!IsThreadInTable(thread_entry32.th32ThreadID, true))
-							InstallThread(thread_entry32.th32ThreadID);
+							InstallThread(thread_entry32.th32ThreadID, 1);
 					}
 				} while (Thread32Next(hTool32, &thread_entry32));
 			}
@@ -176,7 +177,7 @@ int Initalize()
 					&& thread_entry32.th32OwnerProcessID == GetCurrentProcessId()
 					&& thread_entry32.th32ThreadID != GetCurrentThreadId()) {
 
-					InstallThread(thread_entry32.th32ThreadID);
+					InstallThread(thread_entry32.th32ThreadID, 2);
 				}
 			} while (Thread32Next(hTool32, &thread_entry32));
 		}
@@ -277,13 +278,13 @@ LONG WINAPI vEhTracer(PEXCEPTION_POINTERS ExceptionInfo)
 		return EXCEPTION_CONTINUE_SEARCH;
 
 	// no re-entrance while servicing exceptions
-	EnterThreadTable(dwThr & WORD_MOD_SIZE, false);
+	EnterThreadTable(dwThr, false);
 
 	// TODO: just put the whole context in the array to remove an indirect anyhow
-	if (CtxTable != NULL && CtxTable[dwThr] != NULL)
-		pCtx = CtxTable[dwThr];
-	//else
-		//pCtx = InitBlock(dwThr);
+	if (CtxTable != NULL && CtxTable[dwThr].TID != 0)
+		pCtx = &CtxTable[dwThr];
+	else
+		pCtx = InitBlock(dwThr);
 
 	pCtx->pExeption = ExceptionInfo;
 
@@ -298,7 +299,7 @@ LONG WINAPI vEhTracer(PEXCEPTION_POINTERS ExceptionInfo)
 
 	pCtx->BlockFrom = ExceptionInfo->ContextRecord->Rip;
 
-	ExitThreadTable(dwThr & WORD_MOD_SIZE, false);
+	ExitThreadTable(dwThr, false);
 
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
@@ -313,39 +314,40 @@ LONG WINAPI BossLevel(struct _EXCEPTION_POINTERS *ExceptionInfo)
 
 __declspec(dllexport) int APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID reserved)
 {
+	unsigned long TID = __readgsdword(0x48);
+
 	if (reason == DLL_PROCESS_ATTACH)
 	{
 		if (AllocConsole()) {
 			freopen("CONOUT$", "w", stdout);
 			SetConsoleTitle(L"EhTrace Debug Window");
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 			wprintf(L"DLL loaded.\n");
 		}
 		// logger will spin the thread if logs are not picked up fast enough
 		SetupLogger(STRACE_LOG_BUFFER_SIZE);
 		Initalize();
 
-		InstallThread(__readgsdword(0x48));
+		InstallThread(TID, 2);
 		hPulseThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PulseThreads, 0, 0, NULL);
+		NoLogThrId = GetThreadId(hPulseThread);
+
 	}
 	else if (reason == DLL_THREAD_ATTACH)
 	{
 		// setup monitoring of this thread
 		UnTracedThreadCount++;
-		InstallThread(__readgsdword(0x48));
+		InstallThread(TID, 3);
 	}
 	else if (reason == DLL_THREAD_DETACH)
 	{
-		ExitThreadTable(__readgsdword(0x48), true);
+		ExitThreadTable(TID, true);
+		
+		if(CtxTable[TID].insn != NULL)
+			cs_free(CtxTable[TID].insn, 1);
 
-		// cleanup
-		/*
-		PExecutionBlock cleanup = XBlocks->find(__readgsdword(0x48));
-		cs_free(cleanup->insn, 1);
-		_aligned_free(cleanup);
-		XBlocks->erase(__readgsdword(0x48));
-		wprintf(L"Cleaned up thread %d\n", __readgsdword(0x48));
-		*/
+		memset(&CtxTable[TID], 0, sizeof(ExecutionBlock));
+		wprintf(L"Cleaned up thread %d\n", TID);
+
 	}
 	return TRUE;
 }
@@ -367,12 +369,9 @@ int main()
 		return -4;
 	}
 
-	if (!InitThreadTable(1000 * 1000))
-		wprintf(L"unable to initialize thread lock table\n");
-
 	HANDLE hTestThr = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DoRandomTestStuff, 0, CREATE_SUSPENDED, NULL);
 
-	InstallThread(GetThreadId(hTestThr));
+	InstallThread(GetThreadId(hTestThr), 4);
 	ResumeThread(hTestThr);
 
 	//wprintf(L"hit a key to start dumping logs");

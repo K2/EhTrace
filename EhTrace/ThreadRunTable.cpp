@@ -2,7 +2,7 @@
 
 //SRWLOCK ThrLock;
 //blah just use a table, back to STL hash later or something
-PExecutionBlock *CtxTable;
+PExecutionBlock CtxTable;
 ULONGLONG *ThrInstTable;
 ULONGLONG *ThrTable;
 ULONGLONG BitsInSet;
@@ -23,7 +23,8 @@ bool InitThreadTable(ULONGLONG Cnt)
 		return false;
 	}
 
-	CtxTable = (PExecutionBlock *)malloc(Cnt * sizeof(PExecutionBlock));
+	// just load everything into 1 giant array
+	CtxTable = (ExecutionBlock *)malloc(Cnt * sizeof(ExecutionBlock));
 	if (!CtxTable)
 	{
 		free(ThrInstTable);
@@ -33,7 +34,7 @@ bool InitThreadTable(ULONGLONG Cnt)
 
 	memset(ThrTable, 0, (Cnt >> WORD_BIT_SHIFT) * sizeof(ULONGLONG));
 	memset(ThrInstTable, 0, (Cnt >> WORD_BIT_SHIFT) * sizeof(ULONGLONG));
-	memset(CtxTable, 0, Cnt * sizeof(PExecutionBlock));
+	memset(CtxTable, 0, Cnt * sizeof(ExecutionBlock));
 	return true;
 }
 
@@ -52,9 +53,9 @@ void EnterThreadTable(ULONGLONG bit, bool Install)
 void ExitThreadTable(ULONGLONG bit, bool Uninstall)
 {
 	if(Uninstall)
-		ThrInstTable[(bit >> WORD_BIT_SHIFT)] &= (~(1 << (bit & WORD_MOD_SIZE)));
+		ThrInstTable[(bit >> WORD_BIT_SHIFT)] &= (~(1ull << (bit & WORD_MOD_SIZE)));
 	else
-		ThrTable[(bit >> WORD_BIT_SHIFT)] &= (~(1 << (bit & WORD_MOD_SIZE)));
+		ThrTable[(bit >> WORD_BIT_SHIFT)] &= (~(1ull << (bit & WORD_MOD_SIZE)));
 
 	//_interlockedbittestandreset64_HLERelease((LONGLONG *)&ThrTable[(bit >> WORD_BIT_SHIFT)], 1 << (bit & WORD_MOD_SIZE));
 }
@@ -65,13 +66,13 @@ void ExitThreadTable(ULONGLONG bit, bool Uninstall)
 bool IsThreadInTable(ULONGLONG bit, bool CheckInstallTable)
 {
 	if(CheckInstallTable)
-		return (ThrInstTable[(bit >> WORD_BIT_SHIFT)] & (1ull << (bit & WORD_MOD_SIZE))) & 1;
+		return (ThrInstTable[(bit >> WORD_BIT_SHIFT)] & (1ull << (bit & WORD_MOD_SIZE)));
 
-	return (ThrTable[(bit >> WORD_BIT_SHIFT)] & (1ull << (bit & WORD_MOD_SIZE))) & 1;
+	return (ThrTable[(bit >> WORD_BIT_SHIFT)] & (1ull << (bit & WORD_MOD_SIZE)));
 }
 
 
 bool AmIinThreadTable()
 {
-	return (ThrTable[(__readgsdword(0x48) >> WORD_BIT_SHIFT)] & (1ull << (__readgsdword(0x48) & WORD_MOD_SIZE))) & 1;
+	return (ThrTable[(__readgsdword(0x48) >> WORD_BIT_SHIFT)] & (1ull << (__readgsdword(0x48) & WORD_MOD_SIZE)));
 }

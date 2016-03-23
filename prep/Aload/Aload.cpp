@@ -94,6 +94,7 @@ int wmain(int argc, wchar_t* argv[])
 {
 	DWORD pid = 0;
 	wchar_t *DllPath = NULL;
+	wchar_t *modStats = NULL;
 	bool good = false;
 
 	if (argc == 3)
@@ -104,10 +105,22 @@ int wmain(int argc, wchar_t* argv[])
 		if (pid != 0 && pid != LONG_MAX)
 			good = PathFileExistsW(DllPath);
 	}
+	else if (argc == 4)
+	{
+		DllPath = argv[1];
+		modStats = argv[2];
+		pid = wcstol(argv[3], 0, 10);
+
+		if (pid != 0 && pid != LONG_MAX)
+			good = PathFileExistsW(DllPath);
+	}
+
 	if(!good)
 	{
 		wprintf(L"%s c:\\full\\path\\to\\EhTrace.dll 1234\n", argv[0]);
-		wprintf(L"specify DLL path and PID only\n");
+		wprintf(L"specify [DLL path] and [PID] or [DLL path] [mod-stats file] and [PID]\n");
+		wprintf(L"%s c:\\full\\path\\to\\EhTrace.dll c:\\temp\\trace-mod.stats 1234\n");
+		wprintf(L"trace-mod.stats file is created & used if you want symbol loads later.\n");
 		exit(-1);
 	}
 
@@ -120,6 +133,34 @@ int wmain(int argc, wchar_t* argv[])
 		return -2;
 	}
 
+	if (modStats != NULL)
+	{
+		wprintf(L"dumping module stats to file %s, record size %d\n", modStats, sizeof(MODULEENTRY32W));
+		HANDLE hStatsFile = CreateFile(modStats, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+		if (hStatsFile == INVALID_HANDLE_VALUE)
+		{
+			wprintf(L"unable to make module stats file %s\n", modStats);
+			return -3;
+		}
+
+		// use old school ToolHelp to enum DLL's
+		HANDLE hTool32 = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
+		if (hTool32 != INVALID_HANDLE_VALUE) {
+			MODULEENTRY32W me32;
+			me32.dwSize = sizeof(MODULEENTRY32);
+			if (Module32First(hTool32, &me32)) {
+				do {
+					wprintf(L"BASE: [0x%llx] Length: [0x%llx] Path [%s]\n", me32.modBaseAddr, me32.modBaseSize, me32.szExePath);
+					if (!WriteFile(hStatsFile, &me32, sizeof(me32), NULL, NULL))
+					{
+						wprintf(L"Unable to write data error %d\n", GetLastError());
+					}
+				} while (Module32Next(hTool32, &me32));
+			}
+			CloseHandle(hTool32);
+		}
+		CloseHandle(hStatsFile);
+	}
 	return 0;
 }
 

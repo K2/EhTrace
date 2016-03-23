@@ -29,6 +29,7 @@ typedef struct _EFlags {
 	};
 } EFflags, *PEflags;
 
+// currently 32 bytes
 typedef struct _Step_Event {
 	union {
 		struct {
@@ -59,10 +60,9 @@ typedef struct _Trace_Event
 	//char		Name[52];
 } Trace_Event, *PTrace_Event;
 
-
 // Larger sizes here will enable faster execution times ;)
-static const int STRACE_LOG_BUFFER_SIZE = (1024*1024);
 
+static const int STRACE_LOG_BUFFER_SIZE = (sizeof(Step_Event) * 1024*1024);
 
 extern "C" void* SetupLogger(ULONG64 LOG_SIZE);
 extern "C" void* ConnectLogBuffer(ULONG64 LOG_SIZE);

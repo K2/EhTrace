@@ -12,3 +12,5 @@
 #include "Shlwapi.h"
 
 #include <windows.h>
+
+#include <TlHelp32.h>

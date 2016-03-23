@@ -33,4 +33,4 @@ typedef struct _ExecutionBlock {
 } ExecutionBlock, *PExecutionBlock;
 
 
-#include "EhTrace\GlobLog.h"
+#include "GlobLog.h"

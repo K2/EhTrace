@@ -12,6 +12,7 @@ namespace TestDump2
     {
         static void Main(string[] args)
         {
+            List<MinSym> rv = null;
             foreach(var file in args)
             {
                 if (!File.Exists(file))
@@ -19,7 +20,14 @@ namespace TestDump2
 
                 var sym = Sym.Initalize();
 
-                sym.Enum(file);
+                var len = (ulong) new FileInfo(file).Length;
+
+                sym.EnumSymsInFileWithVAOrder(file, 0, len);
+                rv = sym.Enum(file);
+            }
+            foreach (var r in rv)
+            {
+                Console.WriteLine(r.Name + " " + r.Address.ToString("X"));
             }
         }
     }

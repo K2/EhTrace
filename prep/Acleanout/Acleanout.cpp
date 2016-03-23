@@ -1,6 +1,7 @@
 // Acleanout.cpp : Defines the entry point for the console application.
 
-#include "stdafx.h"
+#include "stdafx.h"	
+
 
 // just loop and dump info 
 void LogDump()
@@ -31,6 +32,9 @@ void LogToFile(wchar_t* OutFile)
 
 	while (hOutFile != INVALID_HANDLE_VALUE)
 	{
+		// We should try to queue up 4096/sizeof(step_event) and do writes based on 4k
+		// then flush out if we get any of the CtrlHandler events
+		// double check to unblock LogPopIP
 		se = LogPopIP();
 		if (se != NULL && se->RIP != 0)
 		{
@@ -41,15 +45,37 @@ void LogToFile(wchar_t* OutFile)
 			}
 			memset(se, 0, sizeof(Step_Event) * LogCnt);
 			se = NULL;
-		} else
+		}
+		else
 			Sleep(0);
 	}
+}
+
+static bool DoExit = false;
+
+BOOL CtrlHandler(DWORD fdwCtrlType)
+{
+	switch (fdwCtrlType)
+	{
+		// Handle the CTRL-C signal. 
+		case CTRL_C_EVENT:
+		{
+			if (DoExit)
+				return false;
+
+			printf("Flushing/closing Control-C again to exit\n\n");
+			DoExit = true;
+			return(TRUE);
+		}
+	}
+	return false;
 }
 
 int wmain(int argc, wchar_t* argv[])
 {
 	wchar_t* OutputPath = NULL;
 
+	SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE);
 	ConnectLogBuffer(STRACE_LOG_BUFFER_SIZE);
 	
 	if (argc < 2)

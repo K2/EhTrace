@@ -28,8 +28,8 @@ extern "C" void *SetupLogger(ULONG64 LOG_SIZE)
 
 	ULONG64 PaddedSize = THE_LOG_SIZE + 65536;
 
-	// Global\EhTraceStep will be step logs
-	// Global\EhTrace full contexts
+	// EhTraceStep will be step logs
+	// EhTrace full contexts
 	HANDLE hGlobMap = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, PaddedSize >> 32, PaddedSize & 0xffffffff, L"EhTraceStep");
 	if (hGlobMap == INVALID_HANDLE_VALUE)
 	{
@@ -126,7 +126,7 @@ extern "C" void LogRIP(PExecutionBlock pEx)
 
 	PStep_Event curr = &g_stepev[index];
 
-	// we wait here for the log slot to become available in the ring buffer
+	// we spin-wait here for the log slot to become available in the ring buffer
 	// if the consumer isn't clearing this out fast enough, we wind up blocking the thread
 	while (InterlockedCompareExchange128((LONG64*)curr,
 		(ULONG64)se.RIP, (ULONG64)se.u.Synth, &Zero) == 0)
@@ -138,6 +138,7 @@ extern "C" void LogRIP(PExecutionBlock pEx)
 	curr->FromRIP = se.FromRIP;
 	curr->RSP = se.RSP;
 
+	// this should just allow the reader to look for a new record
 	InterlockedIncrement64((volatile long long *)g_WaitingRecords);
 }
 
@@ -158,16 +159,15 @@ extern "C"  PStep_Event LogPopIP()
 	if (index >= THE_EIP_LOG_COUNT - BUFF_PADD)
 		index = *g_ReadIdx = BUFF_PADD;
 
-	// BUGBUG: fixup locking when we get logmany working!
-	//while (InterlockedCompareExchangeAcquire64(Lock, 1, 0) != 0);
 	InterlockedDecrement64((volatile long long *)g_WaitingRecords);
-	//InterlockedCompareExchangeRelease64(Lock, 0, 1);
 
 	rv = &g_stepev[index];
 	return rv;
 }
 
-
+// This one is probably too complex to worry about
+// just make sure the single pop does not block and return's NULL if there is no log
+// so the caller can locally buff as it call's write
 extern "C" PStep_Event LogPopMany(LONG64 *Returned)
 {
 	PStep_Event rv = NULL;
