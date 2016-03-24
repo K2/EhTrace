@@ -26,5 +26,6 @@ CSW16 demo of notepad generated this trace, no symbols or dump of assembly yet (
 * TestDump2 is a test of the Dia2Sharp
 * WPFx is just a lil test thing just using MSAGL Graphing (soon to get GraphMaps) until I bring in a more substantional GUI (probably based on Gemini/AvalonDock/Caliburn/MahApps/MaterialDesign (whew GUI's need a lot of 3rd party ;)
 
+### YOU NEED DBGHELP.DLL AND SYMSRV.DLL I'LL CHECK THEM IN LATER I _THINK_ THEY ARE REDISTABLE? 
 
 More help/info on how todo whatever soon. 
