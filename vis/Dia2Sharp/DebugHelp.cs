@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
-using System.Threading.Tasks;
+
+// TODO: use that github project that Microsoft released the PDB info which makes life a lot easier? :) never heard that b4!
 
 namespace Dia2Sharp
 {

@@ -21,13 +21,12 @@ namespace TestDump2
                 var sym = Sym.Initalize();
 
                 var len = (ulong) new FileInfo(file).Length;
-
-                sym.EnumSymsInFileWithVAOrder(file, 0, len);
-                rv = sym.Enum(file);
+               
+                rv = sym.EnumSymsInFileWithVAOrder(file, 0xbadcafe000000000, len);
             }
             foreach (var r in rv)
             {
-                Console.WriteLine(r.Name + " " + r.Address.ToString("X"));
+                Console.WriteLine(r);
             }
         }
     }

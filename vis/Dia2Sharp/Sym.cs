@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 using Dia2Lib;
 using static System.Console;
 using System.Diagnostics;
@@ -129,21 +125,22 @@ namespace Dia2Sharp
             } while (childrenFetched == 1);
         }
 
+        public MinSym SymContained(IList<MinSym> PreSorted, ulong VA)
+        {
+            return PreSorted.Match(VA);
+        }
+        public MinSym SymAny(IList<MinSym> PreSorted, ulong VA)
+        {
+            return PreSorted.MatchNearest(VA);
+        }
+
         public List<MinSym> EnumSymsInFileWithVAOrder(string arg, ulong BaseVA, ulong Length)
         {
-            IDiaEnumSymbols EnumSymbols = null;
-            IDiaSymbol Master = null, Sub = null;
-            IDiaEnumTables tables = null;
-            int level = 2;
-            uint compileFetched = 0;
-
+            IDiaSymbol Master = null;
             var rv = new List<MinSym>();
-
-            //DebugHelp.SymFindDebugInfoFile(hCurrentProcess, SymPath, arg, )
 
             var foo = new Dia2Lib.DiaSource();
             foo.loadDataForExe(arg, SymPath, null);
-            //foo.loadDataFromPdb(arg);
             foo.openSession(out Session);
 
             if (Session == null)
@@ -153,11 +150,59 @@ namespace Dia2Sharp
 
             var CurrVA = BaseVA;
             var End = BaseVA + Length;
-
-            Session.findSymbolByVA(CurrVA, SymTagEnum.SymTagNull, out Master);
+            MinSym last = null;
             do {
+                Session.findSymbolByVA(CurrVA, SymTagEnum.SymTagNull, out Master);
+                var len = Master.length > 0 ? Master.length : 1;
 
+
+                var s = new MinSym() {
+                    Address = CurrVA,
+                    Length = len,
+                    Name = Master.name,
+                    ID = Master.symIndexId,
+                    UDName = (!string.IsNullOrWhiteSpace(Master.undecoratedName) && Master.name != Master.undecoratedName) ? Master.undecoratedName : string.Empty,
+                };
+
+
+                if  (last != null 
+                        &&
+                        // if the ID is the same 
+                        ((last.ID == s.ID)
+                        ||
+                        // also if the name and the last name are empty even if the ID is diff, treat them as the same
+                        (string.IsNullOrWhiteSpace(s.Name) && string.IsNullOrWhiteSpace(last.Name))))
+                    
+                    // grow the length if the most recent symbol in the list
+                    last.Length += s.Length;
+                else
+                // otherwise add the new thing to the list 
+                    rv.Add(s);
+
+
+                CurrVA += len;
+                last = s;
+
+#if DEBUGGING_STUFF
+                /* DEBUGGING
+                ForegroundColor = ConsoleColor.Cyan;
+
+                Write($"Name: [{Master.name}] Address: [{CurrVA:X}] Length: [{Master.length}] ");
+                if (string.IsNullOrWhiteSpace(Master.name) && Master.name != Master.undecoratedName)
+                {
+                    ForegroundColor = ConsoleColor.White;
+                    WriteLine($"UDName: [{Master.undecoratedName}]");
+                } 
+                else
+                    WriteLine(String.Empty);
+                    */
+                //foreach (var pr in typeof(IDiaSymbol).LinqPublicProperties())
+                //    WriteLine($"{pr.Name} = {pr.GetValue(Master)}");
+                /*
                 Session.findChildren(Master, SymTagEnum.SymTagNull, null, 0, out EnumSymbols);
+                if (EnumSymbols == null)
+                    continue;
+
                 var tot1 = EnumSymbols.count;
                 int cnt = 0;
 
@@ -169,10 +214,20 @@ namespace Dia2Sharp
                     if (Sub == null)
                         continue;
 
+                    WriteLine($"Name: [{Sub.name}] UName: [{Sub.undecoratedName}] Length: [{Sub.length}]");
 
+                    foreach (var pr in typeof(IDiaSymbol).LinqPublicProperties())
+                        WriteLine($"{pr.Name} = {pr.GetValue(Sub)}");
+                    foreach (var fn in typeof(IDiaSymbol).LinqPublicFunctions())
+                    {
+                       if (fn.Name.Contains("get"))
+                        WriteLine($"{fn.Name} = {fn.Invoke(Sub, null)}");
+                    }
                 } while (cnt < tot1);
+                */
+#endif
 
-            } while (Master != null);
+            } while (CurrVA < End);
 
             return rv;
         }
@@ -200,7 +255,8 @@ namespace Dia2Sharp
 
 
 
-
+#if BLAH_FIX_SOMETIME
+            // reflection & CCW not exactally match made in heaven?
 
 
             //do
@@ -240,7 +296,6 @@ namespace Dia2Sharp
             //} while (Master != null);
 
 
-
             IDiaEnumDebugStreams DebugStreams;
             /*
             Session.getEnumDebugStreams(out DebugStreams);
@@ -259,6 +314,8 @@ namespace Dia2Sharp
             //        WriteLine($"{pr.Name} = {pr.GetValue(ds)}");
             }
             */
+#endif
+
             GlobalScope.findChildren(SymTagEnum.SymTagNull, null, 0, out EnumSymbols);
             var tot = EnumSymbols.count;
             var curr = 0;
@@ -321,7 +378,7 @@ namespace Dia2Sharp
                 }
             }
             return rv;
-
+#if FALSE
             //if (Symbol is IDiaSymbol)
             //{
             //    (Symbol as IDiaSymbol).findChildren(SymTagEnum.SymTagNull, null, 0, out Enum);
@@ -343,11 +400,12 @@ namespace Dia2Sharp
             //        }
             //    }
             //}
+#endif
         }
     }
 }
 
-
+#region BLAH
 
 //if (Master.symTag >=2u && Master.symTag <= 4)
 //    WriteLine($"{Master.name} @ {Master.virtualAddress:X} Length {Master.length:X} SectionAddr = {Master.addressSection}");
@@ -375,3 +433,4 @@ if (Symbol.udtKind == 1)
 //childrenEnumSymbols.Next(1, out Symbol, out childrenFetched);
 //}
 //} while (childrenFetched == 1u);
+#endregion

@@ -1,5 +1,3 @@
-
-
 #include "stdafx.h"
 #include "Agasm.h"
 
@@ -44,7 +42,7 @@ namespace Agasm
 
 	//bool GetBlock(unsigned __int64 RVA, PBYTE Location, csh handle, BasicBlock^% RV);
 
-	// if we find the symbol we add that to the stream if we dont we simply write the adress
+	// if we find the symbol we add that to the stream if we don't we simply write the address
 	bool __clrcall CheckSymbol(char *line, int64_t Address, int64_t Address2)
 	{
 		marshal_context context;

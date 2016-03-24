@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Amerger</RootNamespace>
     <AssemblyName>Amerger</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -60,6 +61,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\prep\Agasm\Agasm.vcxproj">
+      <Project>{42b676b2-f551-49e7-9b3b-bb85b02f15ac}</Project>
+      <Name>Agasm</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dia2Sharp\Dia2Sharp.csproj">
+      <Project>{fb72e2ee-7b32-4879-9b2b-35fb3cdf0fcc}</Project>
+      <Name>Dia2Sharp</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
