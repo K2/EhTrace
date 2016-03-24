@@ -11,6 +11,7 @@
     <StartArguments>c:\windows\system32\mshtml.dll</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <StartArguments>c:\windows\system32\notepad.exe</StartArguments>
+    <StartArguments>c:\windows\system32\ntdll.dll</StartArguments>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
 </Project>

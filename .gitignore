@@ -46,3 +46,13 @@ Network Trash Folder
 Temporary Items
 .apdisk
 *.cache
+*.obj
+*.log
+*.pdb
+*.pch
+*.tlog
+*.ipch
+*.ilk
+*.ipdb
+*.iobj
+*.user
