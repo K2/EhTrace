@@ -8,6 +8,9 @@ knowledge is needed to inspect complete code coverage and binary execution flow,
 We maintain high performance using an adaption of some known methods for high performance tracing, yet there
 is no requirement to use a debugger or enable debug/trace MSR capabilities.    
 
+### Why is it high perf?
+_Branch stepping not single stepping_.  We get for free basic block's and do not have to worry about multipath evaluation or doing complex static analysis.  State is automatically maintained temporally due to the nature of VEH.  All of this is inproc also which saves context switching that impacts typical debug engines.  Next update is to include get_tsc into the current struct to demonstate our event rate more clearly.
+
 I'll be presenting/releasing the first release @ CanSecWest this year, updates to follow.
 
 CSW16 demo of notepad generated this trace, no symbols 
