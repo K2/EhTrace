@@ -11,6 +11,7 @@ is no requirement to use a debugger or enable debug/trace MSR capabilities.
 I'll be presenting/releasing the first release @ CanSecWest this year, updates to follow.
 
 CSW16 demo of notepad generated this trace, no symbols 
+![FLAMING/initial no symbols flame gtraph](https://raw.githubusercontent.com/K2/EhTrace/master/support/x1.100k.svg)
 ![BB graph/with capstone dissassembly](https://raw.githubusercontent.com/K2/EhTrace/master/support/with-dissassembly.PNG)
 ![BB graph/coverage CSW16 run of notepad.exe](https://raw.githubusercontent.com/K2/EhTrace/master/support/notepad-from-CSW.PNG)
 
