@@ -72,6 +72,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AModInfo.cs" />
+    <Compile Include="AStepEvent.cs" />
     <Compile Include="DebugHelp.cs" />
     <Compile Include="MinSym.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

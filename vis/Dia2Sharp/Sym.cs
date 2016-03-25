@@ -15,6 +15,12 @@ namespace Dia2Sharp
         IDiaSession Session = null;
         static string SymPath;
 
+        // Why cant sortedset help me here?! should I just breakdown and use hashset
+        // hashset is sort of suck for range checks :(
+        public static SortedSet<MinSym> SortedAllSymbols;
+        public static List<MinSym> ListAllSymbols;
+
+
         public static Sym Initalize()
         {
             DebugHelp.SymSetOptions(DebugHelp.SymOptions.SYMOPT_DEBUG);
@@ -28,6 +34,7 @@ namespace Dia2Sharp
                 WriteLine($"symbol status  {symStatus}:  {new Win32Exception(Marshal.GetLastWin32Error()).Message }");
 
             DebugHelp.SymSetOptions(DebugHelp.SymOptions.SYMOPT_DEBUG);
+            ListAllSymbols = new List<MinSym>();
 
             return new Sym();
         }
@@ -119,10 +126,29 @@ namespace Dia2Sharp
 
                 if (Symbol.type != null)
                     Args.Add(Symbol.type.name);
-              //  else
-              //      WriteLine($"{Symbol.undecoratedName} ({Symbol.name}) @ {Symbol.virtualAddress:X} Length: {Symbol.length} ");
+                //  else
+                //      WriteLine($"{Symbol.undecoratedName} ({Symbol.name}) @ {Symbol.virtualAddress:X} Length: {Symbol.length} ");
 
             } while (childrenFetched == 1);
+        }
+
+        public static MinSym CheckAllSyms(ulong VA)
+        {
+            // TODO: synthetic thing... maybe we should avoid this heap allocation?
+            // well see after profiling the hotness of this path ;)
+            var check = new MinSym() { Address = VA, Length = 1 };
+
+            var idx = ListAllSymbols.FindIndex(0, 1, (x) => x.CompareTo(check) == 0);
+
+            if (idx >= 0 && idx <= ListAllSymbols.Count)
+                return ListAllSymbols[idx];
+
+            return null;
+        }
+
+        public static MinSym CheckAllSyms(MinSym check)
+        {
+            return ListAllSymbols.Find((x) => x.CompareTo(check) == 0);
         }
 
         public MinSym SymContained(IList<MinSym> PreSorted, ulong VA)
@@ -151,12 +177,14 @@ namespace Dia2Sharp
             var CurrVA = BaseVA;
             var End = BaseVA + Length;
             MinSym last = null;
-            do {
+            do
+            {
                 Session.findSymbolByVA(CurrVA, SymTagEnum.SymTagNull, out Master);
-                var len = Master.length > 0 ? Master.length : 1;
+                var len = Master.length > 0 ? Master.length : 8;
 
 
-                var s = new MinSym() {
+                var s = new MinSym()
+                {
                     Address = CurrVA,
                     Length = len,
                     Name = Master.name,
@@ -165,23 +193,23 @@ namespace Dia2Sharp
                 };
 
 
-                if  (last != null 
+                if (last != null
                         &&
                         // if the ID is the same 
                         ((last.ID == s.ID)
                         ||
                         // also if the name and the last name are empty even if the ID is diff, treat them as the same
                         (string.IsNullOrWhiteSpace(s.Name) && string.IsNullOrWhiteSpace(last.Name))))
-                    
+
                     // grow the length if the most recent symbol in the list
                     last.Length += s.Length;
-                else
-                // otherwise add the new thing to the list 
+                else {
+                    // otherwise add the new thing to the list 
                     rv.Add(s);
-
+                    last = s;
+                }
 
                 CurrVA += len;
-                last = s;
 
 #if DEBUGGING_STUFF
                 /* DEBUGGING
@@ -236,7 +264,6 @@ namespace Dia2Sharp
         {
             IDiaEnumSymbols EnumSymbols = null;
             IDiaSymbol Master = null;
-            IDiaEnumTables tables = null;
             int level = 2;
             uint compileFetched = 0;
 
@@ -318,7 +345,6 @@ namespace Dia2Sharp
 
             GlobalScope.findChildren(SymTagEnum.SymTagNull, null, 0, out EnumSymbols);
             var tot = EnumSymbols.count;
-            var curr = 0;
             do
             {
                 EnumSymbols.Next(1, out Master, out compileFetched);
@@ -341,7 +367,7 @@ namespace Dia2Sharp
 
         List<MinSym> DumpSymbol<T>(T Symbol, int level)
         {
-            IDiaEnumSymbols EnumInner; 
+            IDiaEnumSymbols EnumInner;
             IDiaSymbol IsInner;
             var curr = 0;
             if (Symbol == null)
@@ -372,7 +398,7 @@ namespace Dia2Sharp
 
                             foreach (var prx in typeof(IDiaSymbol).LinqPublicProperties())
                                 WriteLine($"{pr.Name} = {pr.GetValue(IsInner)}");
-                                
+
                         } while (curr++ < tot);
                     }
                 }

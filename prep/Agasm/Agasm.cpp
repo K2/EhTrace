@@ -27,8 +27,16 @@
 
 I was going to avoid C++/CLI but it's so dammm useful!
 
+Agasm here started out as a static tool for basic block derivation from a compiled PE
+
+I'm retro-fitting it into the dynamic needs of EhTrace ATRACE EH!
+
+For now I'm going to just do 
+
+
 */
 
+using namespace Dia2Sharp;
 
 //#include "../asmjit-master/src/asmjit/asmjit.h"
 //using namespace asmjit;
@@ -53,24 +61,20 @@ namespace Agasm
 
 		String^ mSymName = nullptr;
 
-		if (Globals::CurrBasicInfoModule->ContainsKey(Address))
-		{
-			if (!Globals::CurrBasicInfoModule[Address]->Name->StartsWith("."))
-			{
-				mSymName = Regex::Replace(Globals::CurrBasicInfoModule[Address]->Name, "[^\\w+$]", "");
-				SymName = context.marshal_as<const char*>(mSymName);
-				strcat_s(line, STR_BUFF, SymName);
-				FoundSym = true;
-				AdditonalSyms++;
-			}
-		}
+		MinSym CheckForSym;
+		MinSym^ aFoundSym = nullptr;
 
-		if (!FoundSym && Address2 != 0)
-			if (CheckSymbol(line, Address - ROUND_UP(Address2, 16), 0))
-			{
-				Debug::WriteLine("Second effort");
-				AdditonalSyms++;
-			}
+		CheckForSym.Address = Address;
+		CheckForSym.Length = 8;
+		aFoundSym = Sym::CheckAllSyms(%CheckForSym);
+		if (aFoundSym != nullptr)
+		{
+			SymName = context.marshal_as<const char*>(aFoundSym->Name);
+			strcat_s(line, STR_BUFF, SymName);
+			SymName = context.marshal_as<const char*>(aFoundSym->UDName);
+			strcat_s(line, STR_BUFF, SymName);
+			FoundSym = true;
+		}
 
 		char numFmt[32];
 		if (!FoundSym && Address2 == 0) {
@@ -156,8 +160,20 @@ namespace Agasm
 							JmpTargB = 0;
 					}
 				}
+
+
+				/*
+				 *
+				 * I only cared about FuncInfo when I was building this stuff statically 
+				 * since we have auto-magically discovered the current graph
+				 * we can ignore the requirement to load FuncInfo and joining the edges	
+
 				if (IsCall)
 				{
+
+
+
+
 					Tuple<unsigned __int64, FuncInfo^>^ CallSource = Tuple::Create(Address, Function);
 					Tuple<unsigned __int64, String^>^ CallTarg = Tuple::Create(JmpTargA, GetSymName(JmpTargA));
 
@@ -168,7 +184,7 @@ namespace Agasm
 					//Globals::EdgeList->Add(CallSource, CallTarg);
 
 
-				}
+				}*/
 			}
 		}
 		unsigned __int64 ImmDispA;
@@ -335,6 +351,7 @@ namespace Agasm
 	public ref class BasicBlock
 	{
 	public:
+		AStepEvent^ StepEvent;
 		FuncInfo^ Function;
 		BasicBlock^ TrueBlock;
 		BasicBlock^ FalseBlock;
@@ -415,6 +432,30 @@ namespace Agasm
 				return true;
 			}
 			return false;
+		}
+
+		static BasicBlock^ GetSingleBlock(PBYTE Location, unsigned __int64 RVA, csh hnd, size_t csLen, cs_insn* insn, BasicBlock^ Root)
+		{
+			BasicBlock^ Block = gcnew BasicBlock(RVA);
+			Block->Function = Root->Function;
+
+			const uint8_t *csLocation = (const uint8_t *)Location;
+			unsigned __int64 csRVA = RVA;
+			size_t cLen = csLen;
+			bool Done = false;
+
+			while (cs_disasm_iter(hnd, &csLocation, &cLen, &csRVA, insn) && !Done)
+			{
+				DissassemblyLine^ Line = gcnew DissassemblyLine(insn, NULL, Root->Function);
+				Line->NasmDisLine = GetASMStr(hnd, insn, Line);
+
+				Block->Lines->Add(Line->Address, Line);
+				Block->Length += Line->Length;
+
+				if (Line->IsRet || Line->IsIret || Line->IsJmp)
+					break;
+			}
+			return Block;
 		}
 
 		static BasicBlock^ BuildBlocks(PBYTE Location, unsigned __int64 RVA, csh hnd, size_t csLen, cs_insn* insn, BasicBlock^ Root)
@@ -526,7 +567,7 @@ namespace Agasm
 		virtual property String^ Label { String^ get() sealed { return String::IsNullOrWhiteSpace(label) ? Address.ToString("X") : label; } }
 	};
 
-	BasicBlock^ DoDoubleDiss(FILE *fo, PBYTE BaseVA, unsigned __int64 RVA, PBYTE Location, size_t Length, FuncInfo^ fi)
+	BasicBlock^ DoDoubleDiss(unsigned __int64 RVA, PBYTE Location, size_t Length, FuncInfo^ fi, bool Single)
 	{
 		//JitRuntime runtime;
 		//X86Assembler a(&runtime);
@@ -554,7 +595,12 @@ namespace Agasm
 		BasicBlock^ Root = gcnew BasicBlock(RVA);
 		Root->Function = fi;
 
-		BasicBlock^ start = BasicBlock::BuildBlocks(Location, csRVA, handle, Length, insn, Root);
+		BasicBlock^ start;
+
+		if(Single)
+			start = BasicBlock::GetSingleBlock(Location, csRVA, handle, Length, insn, Root);
+		else
+			start = BasicBlock::BuildBlocks(Location, csRVA, handle, Length, insn, Root);
 
 		Root->FalseBlock = start->FalseBlock;
 		Root->TrueBlock = start->TrueBlock;
@@ -599,7 +645,7 @@ namespace Agasm
 		cs_close(&handle);
 		return Root;
 	}
-
+#if NOT_USED_NOW
 	void GenerateDissassembly(String^ Module, PBYTE ModMapp, ULONGLONG VABase, FILE* fo)
 	{
 		marshal_context context;
@@ -672,7 +718,7 @@ namespace Agasm
 			DissassembledFunc^ dd = fi->DissData;
 			dd->label = fi->Name + ":";
 
-			BasicBlock^ root = DoDoubleDiss(fo, ModMapp, fi->VirtualAddress, funcPtr, ROUND_UP(fi->Length, 0x8), fi);
+			BasicBlock^ root = DoDoubleDiss(ModMapp, fi->VirtualAddress, funcPtr, ROUND_UP(fi->Length, 0x8), fi);
 
 			dd->Root = root;
 
@@ -686,6 +732,7 @@ namespace Agasm
 			VABase += root->Length;
 		}
 	}
+#endif
 #if EMIT_A_COMPLETE_ASM_FILE
 	void ManageDissassembly(DissContext^ Dctx)
 	{
@@ -726,4 +773,34 @@ namespace Agasm
 		}
 	}
 #endif
+
+
+	public ref class Agasmic
+	{
+		DissContext^ Dctx;
+	public:
+		Agasmic(String^ Module, unsigned __int64 BaseVA)
+		{
+			Dctx = gcnew DissContext();
+			Dctx->BlockMode = true;
+
+			Dctx->Module = Module;
+			Dctx->VABase = BaseVA;
+			Dctx->ModMapp = MapFile(Module);
+		}
+
+		BasicBlock^ GetBlockFor(AStepEvent^ se)
+		{
+			unsigned __int64 Address = se->RIP;
+			unsigned __int64 RVA = Address - Dctx->VABase;
+			PBYTE funcPtr = GetBytesFromRVAMappedPE(RVA, Dctx->ModMapp);
+			if (!funcPtr)
+				return nullptr;
+
+			BasicBlock^ root = DoDoubleDiss(Address, funcPtr, 128, nullptr, true);
+			root->StepEvent = se;
+			return root;
+		}
+
+	};
 }
