@@ -10,6 +10,7 @@ is no requirement to use a debugger or enable debug/trace MSR capabilities.
 
 ### Why is it high perf?
 _Branch stepping not single stepping_.  We get for free basic block's and do not have to worry about multipath evaluation or doing complex static analysis.  State is automatically maintained temporally due to the nature of VEH.  All of this is inproc also which saves context switching that impacts typical debug engines.  Next update is to include get_tsc into the current struct to demonstate our event rate more clearly.
+#### In 10 seconds; 428,833,152 (32 byte events) each event is a basic block head
 
 I'll be presenting/releasing the first release @ CanSecWest this year, updates to follow.
 
