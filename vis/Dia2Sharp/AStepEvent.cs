@@ -14,6 +14,7 @@ namespace Dia2Sharp
         public ulong RIP;
         public ulong RSP;
         public ulong FROM_RIP;
+        public ulong TSC;
 
         public ulong CycleCount;
 
@@ -21,12 +22,26 @@ namespace Dia2Sharp
 
         public AStepEvent(BinaryReader br)
         {
-            TID = br.ReadUInt32();
+            var aTID = br.ReadUInt32();
+
             Flags = br.ReadUInt32();
-            RIP = br.ReadUInt64();
-            RSP = br.ReadUInt64();
-            FROM_RIP = br.ReadUInt64();
+            var aRIP = br.ReadUInt64();
+            var aRSP = br.ReadUInt64();
+            var aFROM_RIP = br.ReadUInt64();
+
+            TSC =   (TID & 0xffff) |
+                    (RIP & 0xffff000000000000 << 16) |
+                    (RSP & 0xffff000000000000 << 32) |
+                    (FROM_RIP & 0xffff000000000000 << 48);
+
+            TID &= 0xffff0000;
+            RIP &= 0xffff000000000000;
+            RSP &= 0xffff000000000000;
+            FROM_RIP &= 0xffff000000000000;
+
             CycleCount = 1;
         }
+
+        public override string ToString() => $"RSP [{RSP:X}] RIP [{RIP:X}] FROM_RIP [{FROM_RIP:X}]";
     }
 }

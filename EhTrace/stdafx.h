@@ -20,7 +20,6 @@
 #include <Winternl.h>
 #include <wchar.h>
 
-
 #define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 
 #define WORD_BIT_SHIFT 6
@@ -34,6 +33,7 @@ typedef unsigned char u_int8_t;
 // emulator, decision logic verbose data
 typedef struct _ExecutionBlock {
 	DWORD64 BlockFrom;
+	DWORD64 TSC;
 	ULONG InternalID;
 	ULONG TID;
 	HANDLE hThr;

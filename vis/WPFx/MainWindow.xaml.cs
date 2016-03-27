@@ -25,8 +25,9 @@ using Microsoft.Msagl.Layout.Layered;
 using Microsoft.Msagl.Layout.MDS;
 using Microsoft.Msagl.GraphmapsWpfControl;
 using Microsoft.Msagl.WpfGraphControl;
+using Microsoft.Msagl;
 using System.Diagnostics;
-using Dia2Sharp;
+using TottsA;
 
 
 namespace WPFx
@@ -55,10 +56,62 @@ namespace WPFx
     /// </summary>
     public partial class MainWindow : Window
     {
+        String SymFile, TraceFile;
+
+
+
         public MainWindow()
         {
             InitializeComponent();
         }
+        private void btnRender_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(SymFile) || string.IsNullOrWhiteSpace(TraceFile))
+                return;
+
+            string source, target;
+
+            graphViewer = new GraphViewer();
+            graphViewer.LayoutEditingEnabled = false;
+            graphViewer.BindToPanel(gvPanel);
+            Drawing.Edge edg = null;
+            var dgraph = new Drawing.Graph();
+
+            var tot = new totts(SymFile, TraceFile);
+
+            var blocks = tot.GetBlocks();
+
+            foreach (var block in blocks)
+            {
+                if (block == null)
+                    break;
+                source = block.StepEvent.FROM_RIP.ToString("X");
+                target = block.StepEvent.RIP.ToString("X");
+
+                //var edge = new Drawing.Edge(source, "", target);
+                edg = dgraph.AddEdge(source, target);
+            } 
+            foreach(var block in blocks)
+            { 
+                var blockLabel = new StringBuilder();
+                foreach (var line in block.Lines.Values)
+                    blockLabel.Append(line.Address.ToString("X") + "\t" + line.NasmDisLine);
+
+                var node = dgraph.FindNode(block.StepEvent.FROM_RIP.ToString("X"));
+                if (node == null)
+                    continue;
+
+                node.LabelText = blockLabel.ToString();
+                node.Label.FontSize = 10;
+                node.Label.FontName = "New Courier";
+                node.Label.FontColor = Drawing.Color.Blue;
+
+            }
+            dgraph.Attr.LayerDirection = Drawing.LayerDirection.TB;
+            dgraph.Attr.OptimizeLabelPositions = false;
+            graphViewer.Graph = dgraph;
+        }
+        GraphViewer graphViewer;
 
         private void btnSymbols_Click(object sender, RoutedEventArgs e)
         {
@@ -78,9 +131,28 @@ namespace WPFx
             if (string.IsNullOrWhiteSpace(LoadFile))
                 return;
 
-            LoadSymStats(LoadFile);
+            SymFile = LoadFile;
         }
+        private void btnLoad_Click(object sender, RoutedEventArgs e)
+        {
+            var LoadFile = string.Empty;
+            var ofd = new OpenFileDialog
+            {
+                Filter = "(*.*)|*.*",
+                FilterIndex = 1,
+                RestoreDirectory = true,
+                Multiselect = false
+            };
 
+            if (ofd.ShowDialog() == true)
+                LoadFile = ofd.FileName;
+
+            if (string.IsNullOrWhiteSpace(LoadFile))
+                return;
+
+            TraceFile = LoadFile;
+        }
+#if FALSE
         void LoadSymStats(string DatFile)
         {
             
@@ -211,6 +283,6 @@ namespace WPFx
                 }
             }
         }
-
-    }
+#endif
+        }
 }

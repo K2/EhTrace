@@ -24,7 +24,7 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\EhTrace\GlobLog.h">
+    <ClInclude Include="..\..\EhTrace\GlobLog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

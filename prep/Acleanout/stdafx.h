@@ -20,6 +20,7 @@
 // emulator, decision logic verbose data
 typedef struct _ExecutionBlock {
 	DWORD64 BlockFrom;
+	DWORD64 TSC;
 	ULONG InternalID;
 	ULONG TID;
 	HANDLE hThr;

@@ -111,6 +111,12 @@ extern "C" void LogRIP(PExecutionBlock pEx)
 	}
 	
 	Step_Event se;
+
+	se.u.TscA = pEx->TSC & 0xffff;
+	se.TscB = (pEx->TSC >> 16) & 0xfff;
+	se.TscC = (pEx->TSC >> 32) & 0xfff;
+	se.TscD = (pEx->TSC >> 48) & 0xfff;
+
 	se.u.TID = __readgsdword(0x48);
 	se.u.eFlags = pEx->pExeption->ContextRecord->EFlags;
 	se.RIP = pEx->pExeption->ContextRecord->Rip;

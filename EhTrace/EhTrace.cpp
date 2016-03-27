@@ -287,7 +287,7 @@ LONG WINAPI vEhTracer(PEXCEPTION_POINTERS ExceptionInfo)
 		pCtx = InitBlock(dwThr);
 
 	pCtx->pExeption = ExceptionInfo;
-
+	pCtx->TSC = __rdtsc();
 	// since we like to do logging
 	LogRIP(pCtx);
 

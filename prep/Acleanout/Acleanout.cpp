@@ -21,6 +21,8 @@ void LogDump()
 	}
 }
 
+#define EvtArrCnt (4096 / sizeof(Step_Event))
+
 // log to a file
 void LogToFile(wchar_t* OutFile)
 {
@@ -30,15 +32,30 @@ void LogToFile(wchar_t* OutFile)
 	LONG64 LogCnt = 1;
 	DWORD wrote = 0;
 
+	int i = 0;
+	Step_Event evtArray[EvtArrCnt];
+
 	while (hOutFile != INVALID_HANDLE_VALUE)
 	{
 		// We should try to queue up 4096/sizeof(step_event) and do writes based on 4k
 		// then flush out if we get any of the CtrlHandler events
 		// double check to unblock LogPopIP
+
 		se = LogPopIP();
-		if (se != NULL && se->RIP != 0)
+		while (i < EvtArrCnt)
 		{
-			if (!WriteFile(hOutFile, se, sizeof(Step_Event) * LogCnt, &wrote, NULL))
+			//evtArray[i++] = *se;
+
+			memcpy(&evtArray[i++], se, sizeof(Step_Event));
+			memset(se, 0, sizeof(Step_Event));
+			se = LogPopIP();
+		}
+
+		LogCnt = i;
+
+		if (i > 0)
+		{
+			if (!WriteFile(hOutFile, evtArray, sizeof(Step_Event) * LogCnt, &wrote, NULL))
 			{
 				wprintf(L"Error writing output file %s", OutFile);
 				return;

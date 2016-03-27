@@ -118,6 +118,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\prep\Agasm\Agasm.vcxproj">
+      <Project>{42b676b2-f551-49e7-9b3b-bb85b02f15ac}</Project>
+      <Name>Agasm</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\prep\TottsA\TottsA.csproj">
       <Project>{b42aa518-62ad-49c7-8976-85e94b1593b5}</Project>
       <Name>TottsA</Name>
