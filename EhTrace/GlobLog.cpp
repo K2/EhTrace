@@ -109,24 +109,23 @@ extern "C" void LogRIP(PExecutionBlock pEx)
 		//wprintf(L"pre stall\n");
 		Sleep(100);
 	}
-	
+
+
+
 	Step_Event se;
-
-	se.u.TscA = pEx->TSC & 0xffff;
-	se.TscB = (pEx->TSC >> 16) & 0xfff;
-	se.TscC = (pEx->TSC >> 32) & 0xfff;
-	se.TscD = (pEx->TSC >> 48) & 0xfff;
-
+	// the following 128 bytes are written from an interlocked compare x 128 spin loop
+	// that ensures we are not loosing events
+	// several of these are in a union on a struct so we need to pack them up before the cmpx128
+	// the remaining fields are written after we have "won" the position
 	se.u.TID = __readgsdword(0x48);
+	se.u.TscA = pEx->TSC & 0xffff;
 	se.u.eFlags = pEx->pExeption->ContextRecord->EFlags;
 	se.RIP = pEx->pExeption->ContextRecord->Rip;
-	se.FromRIP = pEx->BlockFrom;	
-	se.RSP = pEx->pExeption->ContextRecord->Rsp;
 
-	//LONG64 index = InterlockedAdd64((volatile long long *)g_WriteIdx, 2);
+	// grab the next index
 	ULONG64 index = InterlockedIncrement64((volatile long long *)g_WriteIdx);
 
-	// move past any of the header meta info
+	// if we have moved too far, circle the buffer past any of the header meta info
 	if (index >= THE_EIP_LOG_COUNT - BUFF_PADD)
 		index = *g_WriteIdx = BUFF_PADD;
 
@@ -140,11 +139,14 @@ extern "C" void LogRIP(PExecutionBlock pEx)
 		if (Zero != 0)
 			Zero = 0;
 	}
-	// if were here we won the slot so it should be available to just write
-	curr->FromRIP = se.FromRIP;
-	curr->RSP = se.RSP;
+	// if were here we won the slot so it should be available to just write the remaining fields
+	curr->RSP = pEx->pExeption->ContextRecord->Rsp;
+	curr->FromRIP = pEx->BlockFrom;
+	curr->TscB = (pEx->TSC >> 16) & 0xffff;
+	curr->TscC = (pEx->TSC >> 32) & 0xffff;
+	curr->TscD = (pEx->TSC >> 48) & 0xffff;
 
-	// this should just allow the reader to look for a new record
+	// indicate a new record is available to be popped off
 	InterlockedIncrement64((volatile long long *)g_WaitingRecords);
 }
 

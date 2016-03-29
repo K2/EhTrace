@@ -1,5 +1,9 @@
 #pragma once
 
+// Seems like we have some bits (10) at the high end that if needed
+// can be used for additional TID tracking since right now TID must be
+// 0->65535 but that seems like OK for now anyhow. 
+// 
 typedef struct _EFlags {
 	union {
 		struct {
@@ -34,18 +38,18 @@ typedef struct _EFlags {
 typedef struct _Step_Event {
 	union {
 		struct {
-			ULONG32 TscA : 16;
+			ULONG32 eFlags;		// some reserved bits here but let's just leave them alone for now (10 at the top and 4 interwoven)
 			ULONG32 TID : 16;   // upper 16 used for tsc
-			ULONG32 eFlags;  // some reserved bits here but let's just leave them alone for now
+			ULONG32 TscA : 16;
 		};
 		ULONG64 Synth;
 	} u;
+	ULONG64 RIP : 48;		
 	ULONG64 TscB : 16;
-	ULONG64 RIP : 48;		// we could steal some high bits here	
+	ULONG64 RSP : 48;			
 	ULONG64 TscC : 16;
-	ULONG64 RSP : 48;		// use this for something ! ;)			
-	ULONG64 TscD : 16;											
 	ULONG64 FromRIP : 48;
+	ULONG64 TscD : 16;
 } Step_Event, *PStep_Event;
 
 typedef struct _Trace_Event

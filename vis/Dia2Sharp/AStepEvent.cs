@@ -22,22 +22,21 @@ namespace Dia2Sharp
 
         public AStepEvent(BinaryReader br)
         {
-            var aTID = br.ReadUInt32();
-
             Flags = br.ReadUInt32();
+            var aTID = br.ReadUInt32();
             var aRIP = br.ReadUInt64();
             var aRSP = br.ReadUInt64();
             var aFROM_RIP = br.ReadUInt64();
 
-            TSC =   (TID & 0xffff) |
-                    (RIP & 0xffff000000000000 << 16) |
-                    (RSP & 0xffff000000000000 << 32) |
-                    (FROM_RIP & 0xffff000000000000 << 48);
+            TSC =   ((aTID & 0xffff0000) >> 16) |               
+                    ((aRIP & 0xffff000000000000) >> 32) |
+                    ((aRSP & 0xffff000000000000) >> 16) |
+                    (aFROM_RIP & 0xffff000000000000);
 
-            TID &= 0xffff0000;
-            RIP &= 0xffff000000000000;
-            RSP &= 0xffff000000000000;
-            FROM_RIP &= 0xffff000000000000;
+            TID = aTID & ~0xffff0000;
+            RIP = aRIP & ~0xffff000000000000;
+            RSP = aRSP & ~0xffff000000000000;
+            FROM_RIP = aFROM_RIP & ~0xffff000000000000;
 
             CycleCount = 1;
         }
