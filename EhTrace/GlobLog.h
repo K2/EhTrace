@@ -8,7 +8,7 @@ typedef struct _EFlags {
 	union {
 		struct {
 			DWORD Carry:1;
-			DWORD R1:1;
+			DWORD R1:1; // always set
 			DWORD Parity:1;
 			DWORD R2:1;
 			DWORD Aux:1;

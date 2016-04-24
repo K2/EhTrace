@@ -9,5 +9,5 @@
 
 #include <stdio.h>
 #include <tchar.h>
-
+#include <Windows.h>
 #define APREP true

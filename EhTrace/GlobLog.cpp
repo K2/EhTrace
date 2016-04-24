@@ -13,7 +13,8 @@ volatile ULONG64 *g_WaitingRecords;
 volatile ULONG64 *Seq;
 volatile ULONG64 *g_ReadIdx;
 
-PTrace_Event ShareMap;
+HANDLE hGlobMap = INVALID_HANDLE_VALUE;
+PTrace_Event ShareMap = NULL;
 Trace_Event *g_events = NULL;
 ULONG64 *HDR;
 
@@ -30,7 +31,10 @@ extern "C" void *SetupLogger(ULONG64 LOG_SIZE)
 
 	// EhTraceStep will be step logs
 	// EhTrace full contexts
-	HANDLE hGlobMap = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, PaddedSize >> 32, PaddedSize & 0xffffffff, L"EhTraceStep");
+	if (hGlobMap != INVALID_HANDLE_VALUE)
+		return ShareMap;
+
+	hGlobMap = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, PaddedSize >> 32, PaddedSize & 0xffffffff, L"EhTraceStep");
 	if (hGlobMap == INVALID_HANDLE_VALUE)
 	{
 		wprintf(L"can not map memory %d", GetLastError());
@@ -74,7 +78,10 @@ extern "C" void *ConnectLogBuffer(ULONG64 LOG_SIZE)
 	THE_LOG_COUNT = LOG_SIZE / sizeof(Trace_Event);
 	THE_EIP_LOG_COUNT = LOG_SIZE / sizeof(Step_Event);
 
-	HANDLE hGlobMap = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, LOG_SIZE >> 32, LOG_SIZE & 0xffffffff, L"EhTraceStep");
+	if (hGlobMap != INVALID_HANDLE_VALUE)
+		return ShareMap;
+
+	hGlobMap = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, LOG_SIZE >> 32, LOG_SIZE & 0xffffffff, L"EhTraceStep");
 
 	ShareMap = (PTrace_Event)MapViewOfFile(hGlobMap, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
 	if (!ShareMap)
@@ -82,7 +89,7 @@ extern "C" void *ConnectLogBuffer(ULONG64 LOG_SIZE)
 		wprintf(L"unable to map shared log data");
 		return NULL;
 	}
-	wprintf(L"log buffer is @ %p\n", ShareMap);
+	wprintf(L"ShareMap buffer is @ %p\n", ShareMap);
 	HDR = (ULONG64*)ShareMap;
 
 	Seq = HDR++;
@@ -113,7 +120,7 @@ extern "C" void LogRIP(PExecutionBlock pEx)
 
 
 	Step_Event se;
-	// the following 128 bytes are written from an interlocked compare x 128 spin loop
+	// the following 128 bits are written from an interlocked compare x 128 spin loop
 	// that ensures we are not loosing events
 	// several of these are in a union on a struct so we need to pack them up before the cmpx128
 	// the remaining fields are written after we have "won" the position

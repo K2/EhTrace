@@ -14,3 +14,13 @@
 #include <windows.h>
 
 #include <TlHelp32.h>
+
+
+BOOL EnablePrivilege(TCHAR *szPrivName, BOOL fEnable);
+BOOL EnableDebugPrivilege();
+BOOL InjectDll(DWORD pID, wchar_t *DllName);
+
+#define IN_ALOAD true
+
+int GetModStatsToFile(wchar_t *modStats, DWORD pid);
+PMODULEENTRY32W GetModStats(DWORD pid, int *Cnt);

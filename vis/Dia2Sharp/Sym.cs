@@ -21,9 +21,9 @@ namespace Dia2Sharp
         public static List<MinSym> ListAllSymbols;
 
 
-        public static Sym Initalize()
+        public static Sym Initalize(DebugHelp.SymOptions Options = DebugHelp.SymOptions.SYMOPT_DEBUG)
         {
-            DebugHelp.SymSetOptions(DebugHelp.SymOptions.SYMOPT_DEBUG);
+            DebugHelp.SymSetOptions(Options);
 
             SymPath = Environment.GetEnvironmentVariable("_NT_SYMBOL_PATH");
             if (string.IsNullOrWhiteSpace(SymPath))

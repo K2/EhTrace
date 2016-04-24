@@ -12,6 +12,7 @@ namespace Dia2Sharp
         public const int SSRVOPT_DWORD = 0x0002;
         public const int SSRVOPT_DWORDPTR = 0x004;
         public const int SSRVOPT_GUIDPTR = 0x0008;
+       
 
         [Flags]
         public enum SymFlag : uint
@@ -88,8 +89,6 @@ namespace Dia2Sharp
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 1024)]
             public string Name;
         }
-
-
 
         [Flags]
         public enum SymCallbackActions

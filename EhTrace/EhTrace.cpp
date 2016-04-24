@@ -21,7 +21,6 @@
 //
 */
 
-
 /*
 	K2: Blockfighting with a hooker... or so it goes.
 
@@ -33,6 +32,7 @@
 
 	In a way feels like code-wars/core-wars in a way.  
 	Initial release is targeted towards friendly binaries.
+	To the tune of A-Track -- Out The Speakers!
 */
 // blockfighting defenses? async code aync completion, defend setthreadcontext, 
 // Use page protection to detect/defend execution of code?
@@ -45,10 +45,13 @@
 // *callbacks
 // threads & fiber create
 
+
 LONG WINAPI BossLevel(struct _EXCEPTION_POINTERS *ExceptionInfo);
 LONG WINAPI vEhTracer(struct _EXCEPTION_POINTERS *ExceptionInfo);
 
-//cuckoohash_map<size_t, PExecutionBlock> *XBlocks;
+NtSystemDebugControl loadSystemDebugControl = NULL;
+BOOL GetTokenPriv(HANDLE hProcess, BOOL bEnable, wchar_t* Name);
+
 // not counting ourselves
 size_t KnownThreadCount = 0;
 size_t UnTracedThreadCount = 0;
@@ -56,18 +59,12 @@ HANDLE hPulseThread;
 
 extern "C" static DWORD NoLogThrId = 0;
 extern ExecutionBlock *CtxTable;
+extern PConfigContext ConfigMap;
 
 PExecutionBlock InitBlock(ULONG ID)
 {
 	PExecutionBlock pCtx = &CtxTable[ID];
 
-	/*
-	if (NULL == pCtx)
-	{
-		wprintf(L"Memory allocation failed.\n");
-		return NULL;
-	}
-	*/
 	pCtx->TID = ID;
 	pCtx->InternalID = ID;
 	pCtx->SEQ = 0;
@@ -157,12 +154,33 @@ void PulseThreads()
 	}
 }
 
-
 int Initalize()
 {
-	//XBlocks = new cuckoohash_map<size_t, PExecutionBlock>();
 	if (!InitThreadTable(1000 * 1000))
 		wprintf(L"unable to initialize thread tables\n");
+
+	// if debug MSR is available configure it 
+	// This may be only required for legacy / cloud / hypervisor guest type environments
+	// unfortunately at the moment some hypervisors do poorly when this call is made
+	// HyperV does OK, VMWare does seemingly not as OK
+	// others not tested
+	if (loadSystemDebugControl != NULL)
+	{
+		if (!GetTokenPriv(GetCurrentProcess(), true, SE_DEBUG_NAME))
+			wprintf(L"Unable to get the debug token privilege enabled, functionality will be diminished if required...");
+
+		DWORD Retlen;
+		// debug control for branch debugging
+		SYSDBG_MSR msr;
+		msr.MSR_Address = 0x1D9;
+		msr.DATA = 2;
+	
+		NTSTATUS status = loadSystemDebugControl(DebugSysWriteMsr, &msr, sizeof(SYSDBG_MSR), 0, 0, &Retlen);
+		
+		// I guess restore things or I should of checked the original state right? :)
+		// GetTokenPriv(GetCurrentProcess(), false, SE_DEBUG_NAME);
+	}
+
 
 	// use old school ToolHelp to enum threads
 	// count how many threads with this super beast of an API
@@ -250,11 +268,12 @@ void _DumpContext(PExecutionBlock pXblock)
 	if (csRVA && pXblock && cs_disasm_iter(pXblock->handle, &csLocation, &pXblock->csLen, &csRVA, pXblock->insn))
 	{
 		printf("\n%s %s   | Rip 0x%.16llx (RipFrom 0x%.16llx) EFlags 0x%.8x ", pXblock->insn->mnemonic, pXblock->insn->op_str, pCtx->Rip, pXblock->BlockFrom, pCtx->EFlags);
-		_DumpEFlags(efl);
+		/*_DumpEFlags(efl);
 		wprintf(L"\t\t Rax 0x%.16llx, Rcx 0x%.16llx, Rdx 0x%.16llx, Rbx 0x%.16llx\n", pCtx->Rax, pCtx->Rcx, pCtx->Rdx, pCtx->Rbx);
 		wprintf(L"\t\t Rsp 0x%.16llx, Rbp 0x%.16llx, Rsi 0x%.16llx, Rdi 0x%.16llx\n", pCtx->Rsp, pCtx->Rbp, pCtx->Rsi, pCtx->Rdi);
 		wprintf(L"\t\t R8  0x%.16llx, R9  0x%.16llx, R10 0x%.16llx, R11 0x%.16llx\n", pCtx->R8, pCtx->R9, pCtx->R10, pCtx->R11);
 		wprintf(L"\t\t R12 0x%.16llx, R13 0x%.16llx, R14 0x%.16llx, R15 0x%.16llx\n", pCtx->R12, pCtx->R13, pCtx->R14, pCtx->R15);
+		*/
 	}
 	// just branch/single step him
 	// I'm in the same thread so this isn't that bad
@@ -263,8 +282,12 @@ void _DumpContext(PExecutionBlock pXblock)
 	pXblock->csLen = 32;
 }
 
-// global counter to see how many events were generating during testing
-LONG64 Counter = 0;
+int NativeSymbolCompare(const void *node1, const void *node2)
+{
+	return ((const PNativeSymbol)node1)->Address == ((const PNativeSymbol)node2)->Address ? 0 : -1;
+}
+
+
 LONG WINAPI vEhTracer(PEXCEPTION_POINTERS ExceptionInfo)
 {
 	PExecutionBlock pCtx = NULL;
@@ -280,6 +303,13 @@ LONG WINAPI vEhTracer(PEXCEPTION_POINTERS ExceptionInfo)
 	// no re-entrance while servicing exceptions
 	EnterThreadTable(dwThr, false);
 
+/*	PNativeSymbol pSym = (PNativeSymbol)bsearch((void *)(&ExceptionInfo->ContextRecord->Rip),(void *)ConfigMap->SymTab, ConfigMap->SymCnt, sizeof(NativeSymbol), NativeSymbolCompare);
+	if (pSym == NULL)
+	{
+		ExitThreadTable(dwThr, false);
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+	*/
 	// TODO: just put the whole context in the array to remove an indirect anyhow
 	if (CtxTable != NULL && CtxTable[dwThr].TID != 0)
 		pCtx = &CtxTable[dwThr];
@@ -316,13 +346,24 @@ __declspec(dllexport) int APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID
 {
 	unsigned long TID = __readgsdword(0x48);
 
+	if (loadSystemDebugControl == NULL)
+	{
+		HMODULE dNTdll = GetModuleHandleA("ntdll.dll");
+		loadSystemDebugControl = (NtSystemDebugControl)GetProcAddress(dNTdll, "NtSystemDebugControl");
+	}
+
 	if (reason == DLL_PROCESS_ATTACH)
 	{
 		if (AllocConsole()) {
 			freopen("CONOUT$", "w", stdout);
 			SetConsoleTitle(L"EhTrace Debug Window");
 			wprintf(L"DLL loaded.\n");
+			if (loadSystemDebugControl != NULL)
+				wprintf(L"also ready for DEBUG MSR WRITE");
 		}
+		ConfigMap = ConnectConfig();
+		wprintf(L"Connecting ConfigMap %p\n", ConfigMap);
+
 		// logger will spin the thread if logs are not picked up fast enough
 		SetupLogger(STRACE_LOG_BUFFER_SIZE);
 		Initalize();
@@ -330,6 +371,9 @@ __declspec(dllexport) int APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID
 		InstallThread(TID, 2);
 		hPulseThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PulseThreads, 0, 0, NULL);
 		NoLogThrId = GetThreadId(hPulseThread);
+
+		wprintf(L"Symbol count is %llx\n", ConfigMap->SymCnt);
+		ConnectSymbols(ConfigMap->SymCnt);
 
 	}
 	else if (reason == DLL_THREAD_ATTACH)
@@ -358,17 +402,22 @@ int main()
 {
 	SetupLogger(STRACE_LOG_BUFFER_SIZE);
 	NoLogThrId = GetCurrentThreadId();
+
+	HMODULE dNTdll = GetModuleHandleA("ntdll.dll");
+	loadSystemDebugControl = (NtSystemDebugControl)GetProcAddress(dNTdll, "NtSystemDebugControl");
+	if (loadSystemDebugControl == NULL)
+		wprintf(L"Not using NtSystemDebugControl\n");
 	
 	if (Initalize())
 		wprintf(L"Initialize failed\n");
 
 	//SetUnhandledExceptionFilter(&BossLevel);
-
+	
 	if (!AddVectoredExceptionHandler(1, (PVECTORED_EXCEPTION_HANDLER)vEhTracer)) {
 		wprintf(L"unable to install VEH handler\n");
 		return -4;
 	}
-
+	
 	HANDLE hTestThr = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DoRandomTestStuff, 0, CREATE_SUSPENDED, NULL);
 
 	InstallThread(GetThreadId(hTestThr), 4);

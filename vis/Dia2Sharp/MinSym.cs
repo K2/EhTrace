@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections;
-
+using ProtoBuf;
 
 namespace Dia2Sharp
 {
+    [ProtoContract(AsReferenceDefault = true, ImplicitFields = ImplicitFields.AllPublic)]
     public class MinSym : IComparable, IComparable<MinSym>
     {
         public string Name;
@@ -20,12 +21,14 @@ namespace Dia2Sharp
         public int CompareTo(object obj)
         {
             var other = obj as MinSym;
-            return (Address <= other.Address && ((Address + Length) > other.Address) ? 0 : Address.CompareTo(other.Address));
+            return Address.CompareTo(other.Address);
+            //return (Address <= other.Address && ((Address + Length) > other.Address) ? 0 : Address.CompareTo(other.Address));
         }
 
         public int CompareTo(MinSym other)
         {
-            return CompareTo(other);
+            return Address.CompareTo(other.Address);
+            //return CompareTo(other);
         }
     }
 }

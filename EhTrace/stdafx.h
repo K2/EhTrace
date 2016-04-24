@@ -20,6 +20,7 @@
 #include <Winternl.h>
 #include <wchar.h>
 
+
 #define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 
 #define WORD_BIT_SHIFT 6
@@ -27,6 +28,45 @@
 
 typedef unsigned short u_int16_t;
 typedef unsigned char u_int8_t;
+
+/////// early info on DEBUG MSR method to enable => http://www.ivanlef0u.tuxfamily.org/
+//xp sp2 ntoskrnl 5.1.2600, les chiffre indiquent la taille de la struct à passer en argument
+typedef enum _DEBUG_CONTROL_CODE {
+	DebugSysGetTraceInformation = 1,
+	DebugSysSetInternalBreakpoint, //0x38
+	DebugSysSetSpecialCall, //0x4
+	DebugSysClerSpecialCalls,  //no args kill all special calls
+	DebugSysQuerySpecialCalls,
+	DebugSysBreakpointWithStatus,
+	DebugSysGetVersion, //0x28
+	DebugSysReadVirtual = 8, //0x10
+	DebugSysWriteVirtual = 9,
+	DebugSysReadPhysical = 10,
+	DebugSysWritePhysical = 11,
+	DebugSysReadControlSpace = 12, //0x18
+	DebugSysWriteControlSpace, //0x18
+	DebugSysReadIoSpace, //0x20
+	DebugSysSysWriteIoSpace, //0x20
+	DebugSysReadMsr, //0x10
+	DebugSysWriteMsr, //0x10
+	DebugSysReadBusData, //0x18
+	DebugSysWriteBusData, //0x18
+	DebugSysCheckLowMemory,
+} DEBUG_CONTROL_CODE;
+
+typedef struct _SYSDBG_VIRTUAL {
+	PVOID Address;
+	PVOID Buffer;
+	ULONG Request;
+} SYSDBG_VIRTUAL, *PSYSDBG_VIRTUAL;
+
+typedef struct _SYSDBG_MSR {
+	ULONG MSR_Address;
+	ULONGLONG DATA;
+} SYSDBG_MSR, *PSYSDBG_MSR;
+
+
+typedef ULONG(__stdcall *NtSystemDebugControl)(DEBUG_CONTROL_CODE ControlCode, PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength, PULONG ReturnLength);
 
 // Overall Context through the handler
 // any state we capture + log + extra 
@@ -56,3 +96,4 @@ void _DumpContext(PExecutionBlock ExceptionInfo);
 void DoRandomTestStuff(ULONG Arg);
 
 #include "GlobLog.h"
+#include "Config.h"

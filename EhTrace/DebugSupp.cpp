@@ -17,6 +17,62 @@ LPVOID SStack;
 
 //extern __declspec(dllimport) int fnTestSupMod(void);
 
+
+BOOL GetTokenPriv(HANDLE hProcess, BOOL bEnable, wchar_t* Name)
+{
+	struct {
+		DWORD Count;
+		LUID_AND_ATTRIBUTES Privilege[1];
+	} Info;
+
+	HANDLE Token;
+	BOOL Result;
+
+	// Open the token.
+	Result = OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES, &Token);
+
+	if (Result != TRUE)
+	{
+		wprintf(L"Cannot open process token.\n");
+		return FALSE;
+	}
+
+	// Enable or disable?
+	Info.Count = 1;
+	if (bEnable)
+		Info.Privilege[0].Attributes = SE_PRIVILEGE_ENABLED;
+	else
+		Info.Privilege[0].Attributes = 0;
+
+	// Get the LUID.
+	Result = LookupPrivilegeValue(NULL, Name, &(Info.Privilege[0].Luid));
+	if (Result != TRUE)
+	{
+		wprintf(L"Cannot get privilege for %s.\n", Name);
+		return FALSE;
+	}
+
+	// Adjust the privilege.
+	Result = AdjustTokenPrivileges(Token, FALSE, (PTOKEN_PRIVILEGES)&Info, 0, NULL, NULL);
+	if (Result != TRUE)
+	{
+		wprintf(L"Cannot adjust token privileges (%u)\n", GetLastError());
+		return FALSE;
+	}
+	else
+	{
+		if (GetLastError() != ERROR_SUCCESS)
+		{
+			wprintf(L"Cannot enable the %s privilege; ", Name);
+			wprintf(L"please check the local policy.\n");
+			return FALSE;
+		}
+	}
+
+	CloseHandle(Token);
+	return TRUE;
+}
+
 bool WINAPI f0(void)
 {
 	return wprintf(L"f0\n") > 1 ? true : false;
@@ -69,19 +125,41 @@ char WINAPI f7(ULONGLONG a, int b, int c, ULONG d, int e, ULONG_PTR f, int g)
 }
 void loop()
 {
+	ULONGLONG ullast = ullast = __rdtsc(), ulcurr = 0;
 	DWORD dw1 = 1, dw = 4, dw3 = 3;
 	HMODULE loaded = NULL;
 
 	while (true)
 	{
-		//wprintf(L"%d\n", fnTestSupMod());
 		f1(1);
+		ulcurr = __rdtsc();
+		wprintf(L"drift = %I64d\n", ulcurr - ullast);
+		ullast = ulcurr;
 		f2(1, 2);
+		ulcurr = __rdtsc();
+		wprintf(L"drift = %I64d\n", ulcurr - ullast);
+		ullast = ulcurr;
 		f3(1, 2, &dw3);
+		ulcurr = __rdtsc();
+		wprintf(L"drift = %I64d\n", ulcurr - ullast);
+		ullast = ulcurr;
 		f4(&dw1, 2, 3, 4);
+		ulcurr = __rdtsc();
+		wprintf(L"drift = %I64d\n", ulcurr - ullast);
+		ullast = ulcurr;
 		f5(1, 2, 3, &dw, 5);
+		ulcurr = __rdtsc();
+		wprintf(L"drift = %I64d\n", ulcurr - ullast);
+		ullast = ulcurr;
 		f6(1, 2, 3, 4, 5, 6);
+		ulcurr = __rdtsc();
+		wprintf(L"drift = %I64d\n", ulcurr - ullast);
+		ullast = ulcurr;
 		f7(1, 2, 3, 4, 5, 6, 7);
+		ulcurr = __rdtsc();
+		wprintf(L"drift = %I64d\n", ulcurr - ullast);
+		ullast = ulcurr;
+		wprintf(L"---MAIN LOOP---\n");
 	}
 	return;
 }
@@ -103,7 +181,7 @@ LONG WINAPI BossLevel(struct _EXCEPTION_POINTERS *ExceptionInfo)
 }
 
 // may be better place to configure DR registers and such
-// so the SEH handlers do not mess us up, however
+// so the VEH handlers do not mess us up, however
 // this adds lag
 LONG WINAPI ContHandler1(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
@@ -387,7 +465,7 @@ enum StackOps {
 	NONE = 0,		// Not using stack, then why we break?
 	PUSH = 1,		// Adjust RSP by word size 8 bytes
 	POP = 2,		// ""
-	ADD = 4,		// Adjust RSP by register or immediat value 
+	ADD = 4,		// Adjust RSP by register or immediate value 
 	SUB = 8,
 	CALL = 0x10000,  // these require changes (2 writes) to more than just the RSP
 	RET = 0x20000,	// we have to modify RIP also 
