@@ -1,9 +1,15 @@
 # Eh'Trace (pronounced ATrace) is a binary tracing tool for Windows.
+![LOGO](https://raw.githubusercontent.com/K2/EhTrace/master/support/ehtracelogo-style2.png)
 
 Implemented in C but has some interesting properties that may make it suitable for tracing 
 binaries when other methods are not sufficient, in particular EhTrace does not require changes to a binary
 to enable traces, despite being able to collect the same information as hooker type instrumentation, zero 
 knowledge is needed to inspect complete code coverage and binary execution flow, register state and more.
+
+# Upcoming changes for DEFCON24
+## RANSOM WARRIOR -- Enforced key escrow for defending against or otherwise neutralizing ransom ware =)
+## RoP Defender -- Simple gadget reduction check to ensure balanced call/ret semantics
+## And more!!
 
 We maintain high performance using an adaption of some known methods for high performance tracing, yet there
 is no requirement to use a debugger or enable debug/trace MSR capabilities.    
@@ -11,8 +17,6 @@ is no requirement to use a debugger or enable debug/trace MSR capabilities.
 ### Why is it high perf?
 _Branch stepping not single stepping_.  We get for free basic block's and do not have to worry about multipath evaluation or doing complex static analysis.  State is automatically maintained temporally due to the nature of VEH.  All of this is inproc also which saves context switching that impacts typical debug engines.  Next update is to include get_tsc into the current struct to demonstate our event rate more clearly.
 #### In 10 seconds; 428,833,152 (32 byte events) each event is a basic block head
-
-I'll be presenting/releasing the first release @ CanSecWest this year, updates to follow.
 
 CSW16 demo of notepad generated this trace, no symbols 
 ![FLAMING/initial no symbols flame gtraph](https://raw.githubusercontent.com/K2/EhTrace/master/support/x1_100k.png)
