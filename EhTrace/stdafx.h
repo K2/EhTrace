@@ -6,6 +6,12 @@
 
 #define EhHooks 1
 
+
+#define FLAGS_POST	1
+#define FLAGS_PRE	2
+#define FLAGS_RESOLVE 4 // disassemble past 1 instruction to get where static linkers join
+
+
 #include <intrin.h>
 #include <immintrin.h>
 #include <stdio.h>
@@ -19,7 +25,6 @@
 #include <TlHelp32.h>
 #include <Winternl.h>
 #include <wchar.h>
-
 
 #define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 
@@ -67,6 +72,19 @@ typedef struct _SYSDBG_MSR {
 
 
 typedef ULONG(__stdcall *NtSystemDebugControl)(DEBUG_CONTROL_CODE ControlCode, PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength, PULONG ReturnLength);
+typedef void FighterFunc(void *pCtx);
+
+typedef struct _HookInfo { 
+	char *Name; 
+	ULONG64 Flags; 
+	ULONG64 RIP; 
+	ULONG64 RSP; 
+	DWORD ArgCnt; 
+	DWORD ArgRV; 
+	ULONG64 ArgLEN; 
+	BYTE* Result; 
+	FighterFunc *Custom;
+} HookInfo, *PHookInfo;
 
 // Overall Context through the handler
 // any state we capture + log + extra 
@@ -77,13 +95,16 @@ typedef struct _ExecutionBlock {
 	ULONG InternalID;
 	ULONG TID;
 	HANDLE hThr;
-	ULONG SEQ;
 	csh handle;
 	cs_insn *insn;
 	size_t csLen;
-	
+	ULONG SEQ;
+	ULONG HookCnt; // this should bring us back into 64 bit alignment naturally
+	PHookInfo Hooks;
 	PEXCEPTION_POINTERS pExeption; // filed out on entry to handler
 								   //PCONTEXT pContextRecord;	// secondary context acquired by getthreadcontext
+	LPVOID DisabledUntil;
+	ULONG64 GapRSP;
 } ExecutionBlock, *PExecutionBlock;
 
 bool AmIinThreadTable();
@@ -95,5 +116,9 @@ void EnterThreadTable(ULONGLONG tid, bool Inst);
 void _DumpContext(PExecutionBlock ExceptionInfo);
 void DoRandomTestStuff(ULONG Arg);
 
+ULONG64 inline GetArg(DWORD Cnt, PExecutionBlock pCtx);
+
 #include "GlobLog.h"
 #include "Config.h"
+#include "BlockFighters.h"
+#include "EhTrace.h"

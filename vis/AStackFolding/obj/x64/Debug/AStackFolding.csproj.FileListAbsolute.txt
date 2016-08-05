@@ -1,0 +1,16 @@
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\dbghelp.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\symsrv.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\AStackFolding.exe.config
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\AStackFolding.exe
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\AStackFolding.pdb
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\Agasm.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\Dia2Sharp.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\TottsA.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\protobuf-net.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\Agasm.pdb
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\Dia2Sharp.pdb
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\TottsA.pdb
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\bin\x64\Debug\protobuf-net.xml
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\obj\x64\Debug\AStackFolding.csprojResolveAssemblyReference.cache
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\obj\x64\Debug\AStackFolding.exe
+C:\Users\files\Documents\GitHub\EhTrace\vis\AStackFolding\obj\x64\Debug\AStackFolding.pdb

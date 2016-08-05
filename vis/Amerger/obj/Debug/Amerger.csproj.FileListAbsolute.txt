@@ -1,0 +1,16 @@
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Amerger.exe.config
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Amerger.exe
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Amerger.pdb
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Agasm.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Dia2Sharp.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Microsoft.Msagl.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Microsoft.Msagl.Drawing.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Microsoft.Msagl.GraphmapsWpfControl.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Microsoft.Msagl.GraphViewerGdi.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\protobuf-net.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Agasm.pdb
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\Dia2Sharp.pdb
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\bin\Debug\protobuf-net.xml
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\obj\Debug\Amerger.csprojResolveAssemblyReference.cache
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\obj\Debug\Amerger.exe
+C:\Users\files\Documents\GitHub\EhTrace\vis\Amerger\obj\Debug\Amerger.pdb

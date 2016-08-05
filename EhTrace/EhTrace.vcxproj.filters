@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Fighters">
+      <UniqueIdentifier>{76da696f-9868-4e4f-b6ff-662f9b037bee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -25,6 +28,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GlobLog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockFighters.h">
+      <Filter>Fighters</Filter>
+    </ClInclude>
+    <ClInclude Include="EhTrace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -43,6 +55,18 @@
     </ClCompile>
     <ClCompile Include="DebugSupp.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RoP-Defender.cpp">
+      <Filter>Fighters</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockFighters.cpp">
+      <Filter>Fighters</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyEscrow.cpp">
+      <Filter>Fighters</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

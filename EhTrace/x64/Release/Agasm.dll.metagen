@@ -1,0 +1,281 @@
+ImageRuntimeVersion: v4.0.30319
+Assembly Agasm, Version=1.0.*, Culture=Invariant Language (Invariant Country): 
+	hash=SHA1, flags=PublicKey
+Assembly mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly Dia2Sharp, Version=1.0.*, Culture=Invariant Language (Invariant Country): 
+	hash=None, flags=None
+Assembly System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Xml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Assembly System.Xml.Linq, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089: 
+	hash=None, flags=None
+Class Agasm.CLR_PE_SECTIONS: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    UInt64 RelocatedBase : Public
+    UInt64 ImageBase : Public
+    UInt64 StartOff : Public
+    UInt32 Length : Public
+    UInt32 VirtualSize : Public
+    UInt32 CLRPatch : Public
+    UInt32 TimeDateStamp : Public
+    UInt32 CheckSum : Public
+    UInt32 DebugLoc : Public
+    UInt32 DebugSize : Public
+    Int32 PrePadAlign : Public
+    Int32 PostPadAlign : Public
+    UInt32 ImportLoc : Public
+    UInt32 ImportSize : Public
+    UInt32 BaseOfCode : Public
+    UInt32 CfgFlag : Public
+    Boolean IsCLRApp : Public
+    Boolean IsCode : Public
+    Boolean IsExec : Public
+    Boolean IsWriteable : Public
+    Boolean IsNoAccess : Public
+    Boolean IsRead : Public
+    Boolean IsWriteCopy : Public
+    Boolean IsNoCache : Public
+    Boolean IsVadSection : Public
+    Boolean IsModule : Public
+    Boolean Is64bit : Public
+    System.String SectionName : Public
+    System.String PDBPath : Public
+    System.String FileName : Public
+    System.Guid CV_GUID : Public
+    System.String CV_PDBNAME : Public
+    UInt32 CV_AGE : Public
+    System.Collections.Generic.Dictionary`2[System.String,System.Collections.Generic.List`1[System.Collections.Generic.KeyValuePair`2[System.String,System.UInt64]]] ImportTable : Public
+Class Agasm.DataInfo: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String Name : Public
+    System.String Type : Public
+  Methods:
+    SetType(UInt32 IsLong): PrivateScope, Public, HideBySig
+Class Agasm.CompileDetails: AutoLayout, AnsiClass, Class, Public, Serializable, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String Module : Public
+    System.String Language : Public
+    System.String Cpu : Public
+    Boolean IsManaged : Public
+    Boolean IsHotPatch : Public
+    Boolean IsGS : Public
+    Boolean IsSDL : Public
+    Boolean IsNoDebuug : Public
+Class Agasm.BasicSymInfo: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String, UInt64): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(System.String): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String Name : Public
+    UInt64 VirtualAddress : Public
+    UInt32 RVA : Public
+    UInt32 AddressOffset : Public
+    UInt32 AddressSection : Public
+    UInt64 Length : Public
+Class Agasm.FuncInfo: AutoLayout, AnsiClass, Class, Public, Serializable, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(Agasm.FuncInfo): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(Agasm.FuncInfo): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Interfaces:
+    System.ICloneable
+    System.IComparable
+  Fields:
+    UInt32 ID : Public
+    System.Collections.Generic.List`1[Agasm.FuncInfo] CallSites : Public
+    System.Collections.Generic.List`1[Agasm.FuncInfo] Calls : Public
+    System.Collections.Generic.List`1[System.String] ArgNames : Public
+    Agasm.CompileDetails Compiler : Public
+    System.String BlockName : Public
+    System.String InModule : Public
+    System.String UDName : Public
+    System.String HookDoubtfull : Public
+    System.String InfoLine : Public
+    Int32 ArgCount : Public
+    Boolean CustomCallingConv : Public
+    Boolean IsInlined : Public
+    Boolean IsNaked : Public
+    Boolean NotReachable : Public
+    Boolean IsPublic : Public
+    Boolean IsThunk : Public
+    Boolean IsPtr : Public
+    Boolean IsFunc : Public
+    UInt32 RVA : Public
+    UInt32 AddressOffset : Public
+    UInt32 AddressSection : Public
+    UInt64 VirtualAddress : Public
+    UInt64 Length : Public
+  Properties:
+    Agasm.DissassembledFunc DissData 'get set' : 
+    System.String Name 'get set' : 
+  Methods:
+    CompareTo(Object): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask
+    Clone(): PrivateScope, Public, Virtual, HideBySig, VtableLayoutMask
+    Clone(Object): PrivateScope, Public, HideBySig
+    get_Name(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_Name(String): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_DissData(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_DissData(DissassembledFunc): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+Class Agasm.ClassInfo: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    UInt32 ID : Public
+    UInt32 ParentID : Public
+    UInt32 LexicalParentId : Public
+    UInt32 VirtualTableShapeID : Public
+    UInt32 SubTypeId : Public
+    UInt32 ThisAdjust : Public
+    UInt64 VTablePtrSize : Public
+    UInt64 VTableSize : Public
+    UInt32 VTableIndex : Public
+    UInt32 VTableOffset : Public
+    System.String Name : Public
+    System.String TypeName : Public
+    System.String Parent : Public
+    System.String LexicalParent : Public
+    System.String VirtualBaseTableType : Public
+    System.String BaseType : Public
+    System.Collections.Generic.List`1[Agasm.ClassInfo] Children : Public
+    System.Collections.Generic.List`1[Agasm.DataInfo] DataMembers : Public
+    Boolean IsIndirectVirtualBaseClass : Public
+    Boolean IsVirtualBaseClass : Public
+    Boolean IsVirtualInheritance : Public
+    Boolean IsMultipleInheritance : Public
+    Boolean IsSingleInheritance : Public
+    Boolean IsBaseClass : Public
+    Boolean IsVTable : Public
+    Boolean IsUserClass : Public
+    Boolean IsFriendClass : Public
+    Boolean HasDataMembers : Public
+Class Agasm.DissContext: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.Collections.Generic.SortedDictionary`2[System.String,System.Collections.Generic.SortedDictionary`2[System.UInt32,Agasm.FuncInfo]] FunctionTable : Public
+    Byte* ModMapp : Public
+    UInt64 VABase : Public
+    UInt64 Length : Public
+    System.String ASMOutFile : Public
+    _iobuf* fo : Public
+    Boolean BlockMode : Public
+    Boolean FlatMode : Public
+  Properties:
+    System.String Module 'get set' : 
+  Methods:
+    get_Module(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    set_Module(String): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    ToString(): PrivateScope, Public, Final, Virtual, HideBySig
+Class Agasm.Globals: AutoLayout, AnsiClass, Class, Public, Abstract, Sealed, BeforeFieldInit
+  Fields:
+    Agasm.DissContext DissCtx : Public, Static
+    System.Collections.Generic.List`1[Agasm.CLR_PE_SECTIONS] PEImports : Public, Static
+    Agasm.CLR_PE_SECTIONS[] ScannedPE : Public, Static
+    System.Collections.Generic.Dictionary`2[System.UInt32,Agasm.ClassInfo] ClassTable : Public, Static
+    System.Collections.Generic.List`1[System.UInt64] PendingBlocks : Public, Static
+    System.Collections.Generic.SortedDictionary`2[System.String,System.Collections.Generic.SortedDictionary`2[System.UInt32,Agasm.FuncInfo]] FunctionTable : Public, Static
+    System.Collections.Generic.SortedDictionary`2[System.String,System.Collections.Generic.SortedDictionary`2[System.UInt64,Agasm.BasicSymInfo]] BasicSymInfoTable : Public, Static
+    System.Collections.Generic.SortedDictionary`2[System.UInt64,Agasm.BasicSymInfo] CurrBasicInfoModule : Public, Static
+    System.Collections.Generic.KeyValuePair`2[System.UInt32,Agasm.FuncInfo][] FunctionTableArray : Public, Static
+    System.Collections.Generic.Dictionary`2[System.String,Agasm.CompileDetails] UnassignedDetails : Public, Static
+    System.Collections.Generic.List`1[System.String] ModulesNotToHook : Public, Static
+    System.Collections.Generic.List`1[System.String] PrefixBanList : Public, Static
+    System.Collections.Generic.List`1[System.String] GlobBanList : Public, Static
+    System.Collections.Generic.List`1[System.String] HookOnlyFuncs : Public, Static
+    System.Collections.Generic.List`1[System.String] HookWildFuncs : Public, Static
+    System.Collections.Generic.List`1[System.String] HotWireFunctions : Public, Static
+    System.Collections.Generic.SortedDictionary`2[System.Tuple`2[System.UInt64,Agasm.FuncInfo],System.Tuple`2[System.UInt64,System.String]] EdgeList : Public, Static
+    Boolean NoRecurDependencyScan : Public, Static
+Class Agasm.DissassemblyLine: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(cs_insn*, SByte*, Agasm.FuncInfo): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    UInt64 ImmDispA : Public
+    UInt64 JmpTargA : Public
+    UInt64 JmpTargB : Public
+    System.Collections.Generic.List`1[System.UInt64] ReferencedBy IsByValue : Public, InitOnly
+    UInt64 Address : Public
+    UInt16 Length : Public
+    UInt16 PrefixLen : Public
+    Boolean IsEdge : Public
+    Boolean IsRelative : Public
+    Boolean IsEntry : Public
+    Boolean IsInt : Public
+    Boolean IsJmp : Public
+    Boolean IsCall : Public
+    Boolean IsFar : Public
+    Boolean IsRet : Public
+    Boolean IsIret : Public
+    Boolean IsPriv : Public
+    cs_insn* Insn : Public
+    cs_detail* Detail : Public
+    cs_x86* x86 : Public
+    System.String NasmDisLine : Public
+    System.String label : Public
+    Agasm.FuncInfo Function : Public
+  Properties:
+    System.String Label 'get ' : 
+  Methods:
+    get_Label(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    ToString(): PrivateScope, Public, Final, Virtual, HideBySig
+Class Agasm.BasicBlock: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(Byte*, UInt64, UInt64, UInt64, cs_insn*): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+    Void .ctor(Int64): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    Dia2Sharp.AStepEvent StepEvent : Public
+    Agasm.FuncInfo Function : Public
+    Agasm.BasicBlock TrueBlock : Public
+    Agasm.BasicBlock FalseBlock : Public
+    System.Collections.Generic.List`1[System.UInt64] AllRefTargets : Public
+    System.Collections.Generic.List`1[System.UInt64] TrueProcedureRefs : Public
+    System.Collections.Generic.List`1[System.UInt64] FalseProcedureRefs : Public
+    System.Collections.Generic.SortedList`2[System.UInt64,Agasm.DissassemblyLine] Lines : Public
+    cs_insn* insn : Public
+    UInt64 csLength : Public
+    Boolean IsRetBlock : Public
+    Boolean IsStartBlock : Public
+    UInt64 handle : Public
+    Byte* Location : Public
+    UInt64 RVA : Public
+    UInt64 Address : Public
+    UInt64 Length : Public
+    System.String label : Public
+    System.Collections.Generic.List`1[System.UInt64] CallFrom : Public
+  Properties:
+    System.String Label 'get ' : 
+    UInt64 EndInsnAddr 'get ' : 
+  Methods:
+    IsSub(BasicBlock): PrivateScope, Public, HideBySig
+    SplitAndLink(BasicBlock): PrivateScope, Public, HideBySig
+    GetSingleBlock(Byte*, UInt64, UInt64, UInt64, cs_insn*, BasicBlock): PrivateScope, Public, Static, HideBySig
+    BuildBlocks(Byte*, UInt64, UInt64, UInt64, cs_insn*, BasicBlock): PrivateScope, Public, Static, HideBySig
+    GetBlocks(BasicBlock, List`1, Int32& IsExplicitlyDereferenced): PrivateScope, Public, Static, HideBySig
+    get_EndInsnAddr(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_Label(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+Class Agasm.DissassembledFunc: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Fields:
+    System.String CPrototype : Public
+    Int32 ArgCount : Public
+    UInt64 Address : Public
+    Int32 Length : Public
+    System.String label : Public
+    Agasm.BasicBlock Root : Public
+    Int32 _edgeCount : Public
+    Int32 _nodeCount : Public
+  Properties:
+    System.String Label 'get ' : 
+    Int32 NodeCount 'get ' : 
+    Int32 EdgeCount 'get ' : 
+  Methods:
+    get_EdgeCount(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_NodeCount(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+    get_Label(): PrivateScope, Public, Final, Virtual, HideBySig, VtableLayoutMask, SpecialName
+Class Agasm.Agasmic: AutoLayout, AnsiClass, Class, Public, BeforeFieldInit
+    Void .ctor(System.String, UInt64): PrivateScope, Public, HideBySig, SpecialName, RTSpecialName
+  Methods:
+    GetBlockFor(AStepEvent): PrivateScope, Public, HideBySig

@@ -125,11 +125,12 @@ char WINAPI f7(ULONGLONG a, int b, int c, ULONG d, int e, ULONG_PTR f, int g)
 }
 void loop()
 {
-	ULONGLONG ullast = ullast = __rdtsc(), ulcurr = 0;
+	ULONGLONG ullast = ullast = __rdtsc(), ulcurr = 0, ullStart=0, ullEnd=0;
 	DWORD dw1 = 1, dw = 4, dw3 = 3;
 	HMODULE loaded = NULL;
 
-	while (true)
+	ullStart = __rdtsc();
+	for (int i = 0; i < 8; i++)
 	{
 		f1(1);
 		ulcurr = __rdtsc();
@@ -161,6 +162,9 @@ void loop()
 		ullast = ulcurr;
 		wprintf(L"---MAIN LOOP---\n");
 	}
+	ullEnd = __rdtsc();
+	wprintf(L"TSC START [%I64d] END [%I64d] DIFF [%I64d]\n", ullStart, ullEnd, ullEnd - ullStart);
+	Sleep(-1);
 	return;
 }
 
@@ -197,8 +201,7 @@ LONG WINAPI ContHandler1(struct _EXCEPTION_POINTERS *ExceptionInfo)
 	ExceptionInfo->ContextRecord->EFlags |= 0x100;
 	//ExceptionInfo->ContextRecord->Rip += insn->size;
 
-	NTSTATUS status = loadSystemDebugControl(DebugSysWriteMsr,
-		&msr, sizeof(SYSDBG_MSR), 0, 0, &Retlen);
+	NTSTATUS status = loadSystemDebugControl(DebugSysWriteMsr, &msr, sizeof(SYSDBG_MSR), 0, 0, &Retlen);
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
 // signal() didn't work out well 

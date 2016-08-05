@@ -1,0 +1,11 @@
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\bin\Debug\TottsA.dll
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\bin\Debug\TottsA.pdb
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\bin\Debug\Agasm.dll
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\bin\Debug\Dia2Sharp.dll
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\bin\Debug\protobuf-net.dll
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\bin\Debug\Dia2Sharp.pdb
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\bin\Debug\Agasm.pdb
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\bin\Debug\protobuf-net.xml
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\obj\Debug\TottsA.csprojResolveAssemblyReference.cache
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\obj\Debug\TottsA.dll
+C:\Users\files\Documents\GitHub\EhTrace\prep\TottsA\obj\Debug\TottsA.pdb

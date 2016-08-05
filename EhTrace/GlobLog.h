@@ -35,6 +35,9 @@ typedef struct _EFlags {
 
 // currently 32 bytes
 // gettsc into the reserved bit's for time of execution
+// TODO: Reduce Addresses by another 16 bits since we know 32bit even on 64 is 
+// what we expect to be the max code delta is 32bit
+// TODO: Set notifications in the log about which blockfighter triggered for debugging?
 typedef struct _Step_Event {
 	union {
 		struct {

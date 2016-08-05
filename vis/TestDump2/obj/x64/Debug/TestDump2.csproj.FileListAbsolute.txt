@@ -1,0 +1,10 @@
+C:\Users\files\Documents\GitHub\EhTrace\vis\TestDump2\bin\x64\Debug\TestDump2.exe.config
+C:\Users\files\Documents\GitHub\EhTrace\vis\TestDump2\bin\x64\Debug\TestDump2.exe
+C:\Users\files\Documents\GitHub\EhTrace\vis\TestDump2\bin\x64\Debug\TestDump2.pdb
+C:\Users\files\Documents\GitHub\EhTrace\vis\TestDump2\bin\x64\Debug\Dia2Sharp.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\TestDump2\bin\x64\Debug\protobuf-net.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\TestDump2\bin\x64\Debug\Dia2Sharp.pdb
+C:\Users\files\Documents\GitHub\EhTrace\vis\TestDump2\bin\x64\Debug\protobuf-net.xml
+C:\Users\files\Documents\GitHub\EhTrace\vis\TestDump2\obj\x64\Debug\TestDump2.csprojResolveAssemblyReference.cache
+C:\Users\files\Documents\GitHub\EhTrace\vis\TestDump2\obj\x64\Debug\TestDump2.exe
+C:\Users\files\Documents\GitHub\EhTrace\vis\TestDump2\obj\x64\Debug\TestDump2.pdb

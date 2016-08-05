@@ -1,5 +1,22 @@
 #include "stdafx.h"
 
+
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// 
+// BUGBUG: Some super easy attack would be to manipulate this table.
+// Consider using some run time cookie to access it that can be
+// easily detected in memory, simplify a scan for it in the background.
+// * Base it on EncodeFunctionPointer
+// * Simple XOR should be OK and give us something to detect XOR mem, known-magic
+// *    
+// 
+// Self modifying code detection easy, hash code as we execute store that hash with the cache
+// if hash does not match were about to execute a block that's been modified
+// 
+
+
+
 //SRWLOCK ThrLock;
 //blah just use a table, back to STL hash later or something
 PExecutionBlock CtxTable;

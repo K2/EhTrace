@@ -1,0 +1,7 @@
+C:\Users\files\Documents\GitHub\EhTrace\vis\Dia2Sharp\bin\x64\Debug\Dia2Sharp.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\Dia2Sharp\bin\x64\Debug\Dia2Sharp.pdb
+C:\Users\files\Documents\GitHub\EhTrace\vis\Dia2Sharp\bin\x64\Debug\protobuf-net.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\Dia2Sharp\bin\x64\Debug\protobuf-net.xml
+C:\Users\files\Documents\GitHub\EhTrace\vis\Dia2Sharp\obj\x64\Debug\Dia2Sharp.csprojResolveAssemblyReference.cache
+C:\Users\files\Documents\GitHub\EhTrace\vis\Dia2Sharp\obj\x64\Debug\Dia2Sharp.dll
+C:\Users\files\Documents\GitHub\EhTrace\vis\Dia2Sharp\obj\x64\Debug\Dia2Sharp.pdb

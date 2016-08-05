@@ -7,9 +7,9 @@
 // since this build is an exe the main() in EhTrace.cpp will run the test case
 
 #include "../../EhTrace/EhTrace.cpp"
-
 #include "../../EhTrace/ThreadRuntable.cpp"
-
 #include "../../EhTrace/DebugSupp.cpp"
-
 #include "../../EhTrace/GlobLog.cpp"
+#include "../../EhTrace/BlockFighters.cpp"
+#include "../../EhTrace/RoP-Defender.cpp"
+#include "../../EhTrace/KeyEscrow.cpp"

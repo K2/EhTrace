@@ -32,5 +32,11 @@
     <ClCompile Include="Aload.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AInsert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Asnap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

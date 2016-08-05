@@ -76,6 +76,9 @@ namespace WPFx
             graphViewer.BindToPanel(gvPanel);
             Drawing.Edge edg = null;
             var dgraph = new Drawing.Graph();
+            var sugiyamaSettings = (SugiyamaLayoutSettings)dgraph.LayoutAlgorithmSettings;
+            sugiyamaSettings.NodeSeparation *= 2;
+            sugiyamaSettings.EdgeRoutingSettings.EdgeRoutingMode = EdgeRoutingMode.Rectilinear;
 
             var tot = new totts(SymFile, TraceFile);
 
@@ -95,7 +98,7 @@ namespace WPFx
             { 
                 var blockLabel = new StringBuilder();
                 foreach (var line in block.Lines.Values)
-                    blockLabel.Append(line.Address.ToString("X") + "\t" + line.NasmDisLine);
+                    blockLabel.Append($"{line.Address:X} \t + {line.NasmDisLine}");
 
                 var node = dgraph.FindNode(block.StepEvent.FROM_RIP.ToString("X"));
                 if (node == null)

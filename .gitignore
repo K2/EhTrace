@@ -56,3 +56,7 @@ Temporary Items
 *.ipdb
 *.iobj
 *.user
+*.dll
+*.xml
+*.idb
+*.idb

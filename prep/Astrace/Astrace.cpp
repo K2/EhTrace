@@ -1,5 +1,11 @@
 // Astrace.cpp : Defines the entry point for the console application.
 //
+//
+// All the symbol stuff is annoying right now and I'm sort of waiting for the microsoft-pdb github to be in a buildable status
+// 
+// 
+// TODO: Add some PE loading detection for exception handling
+//
 
 #include "stdafx.h"
 #include "Symbolize.h"
@@ -42,7 +48,7 @@ int wmain(int argc, wchar_t* argv[])
 	int c;
 	HRESULT hr;
 	HANDLE hSymbolCache = INVALID_HANDLE_VALUE;
-	DWORD ExitCode = 0;
+	DWORD ExitCode = 0, retval;
 	marshal_context context;
 	wchar_t* szSymbolCache = NULL;
 	bool UseSymbolCache = false;
@@ -55,7 +61,6 @@ int wmain(int argc, wchar_t* argv[])
 		return -1;
 	}
 
-	DWORD retval = GetFullPathName(L"EhTrace.DLL", BUFSIZE, buffer, lppPart);
 	while ((c = getopt(argc, argv, L"x:E:sc:C:")) != -1)
 	{
 		switch (c)
@@ -82,12 +87,12 @@ int wmain(int argc, wchar_t* argv[])
 		}
 	}
 
-	if (argc <= 1 || !retval || !ToRun)
+	if (argc <= 1 || !ToRun)
 	{
 		ShowHelp(argv);
 		return -2;
 	}
-
+	retval = GetFullPathName(EhTrace, BUFSIZE, buffer, lppPart);
 	EhTrace = buffer;
 	wprintf(L"Starting %s (injection DLL %s) \n", ToRun, EhTrace);
 
@@ -109,81 +114,79 @@ int wmain(int argc, wchar_t* argv[])
 	WaitForSingleObject(hTestThr, INFINITE);
 	SuspendThread(hTestThr);
 
-
-	wprintf(L"Symbolizing code, this step can take time.");
-	// do Symbols
-	SymbolSetup::SymSetup(&pi);
-	int SymCnt = Globals::SymCtx->ListAllSymbols->Count;
-	int MarshaledSymbols = 0;
-	wprintf(L" %d symbols prepared\n", SymCnt);
-
-	// load Symbols into config space as log addresses
-	ConnectSymbols(SymCnt);
-	for (int i = 0; i < SymCnt; i++)
+	if (pConfig->BasicSymbolsMode)
 	{
-		bool HasNoName = String::IsNullOrWhiteSpace(Globals::SymCtx->ListAllSymbols[i]->Name);
-		bool HasNoUDName = String::IsNullOrWhiteSpace(Globals::SymCtx->ListAllSymbols[i]->UDName);
 
-		if (HasNoName && HasNoUDName)
-			continue;
-		MarshaledSymbols++;
+		wprintf(L"Symbolizing code, this step can take time.");
+		// do Symbols
+		SymbolSetup::SymSetup(&pi);
+		int SymCnt = Globals::SymCtx->ListAllSymbols->Count;
+		int MarshaledSymbols = 0;
+		wprintf(L" %d symbols prepared\n", SymCnt);
 
-		pConfig->SymTab[i].Address = Globals::SymCtx->ListAllSymbols[i]->Address;
-		pConfig->SymTab[i].Length = Globals::SymCtx->ListAllSymbols[i]->Length;
-
-		if (!HasNoName)
+		// load Symbols into config space as log addresses
+		ConnectSymbols(SymCnt);
+		for (int i = 0; i < SymCnt; i++)
 		{
-			pConfig->SymTab[i].Name = context.marshal_as<const wchar_t*>(Globals::SymCtx->ListAllSymbols[i]->Name);
-			pConfig->SymTab[i].NameLen = wcslen(pConfig->SymTab[i].Name);
-		}
+			bool HasNoName = String::IsNullOrWhiteSpace(Globals::SymCtx->ListAllSymbols[i]->Name);
+			bool HasNoUDName = String::IsNullOrWhiteSpace(Globals::SymCtx->ListAllSymbols[i]->UDName);
 
-		if (!HasNoUDName)
-		{
-			pConfig->SymTab[i].UDName = context.marshal_as<const wchar_t*>(Globals::SymCtx->ListAllSymbols[i]->UDName);
-			pConfig->SymTab[i].UDNameLen = wcslen(pConfig->SymTab[i].UDName);
-		}
-	}
-	wprintf(L"Symbols marshaled into shared memory\n");
+			if (HasNoName && HasNoUDName)
+				continue;
+			MarshaledSymbols++;
 
-	if (szSymbolCache)
-	{
-		DiskSymbol ds;
-		if (UseSymbolCache)
-		{
-			hSymbolCache = CreateFile(szSymbolCache, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+			pConfig->SymTab[i].Address = Globals::SymCtx->ListAllSymbols[i]->Address;
+			pConfig->SymTab[i].Length = Globals::SymCtx->ListAllSymbols[i]->Length;
 
-
-
-		}
-		else
-		{
-
-			wprintf(L"Caching Symbols to file %s\n", szSymbolCache);
-
-			hSymbolCache = CreateFile(szSymbolCache, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
-			for (int j = 0; j < MarshaledSymbols; j++)
+			if (!HasNoName)
 			{
-				ds.Address = pConfig->SymTab[j].Address;
-				ds.Length = pConfig->SymTab[j].Length;
-				//ds.NameLen = pConfig->SymTab[j].NameLen;
-				//ds.UDNameLen = pConfig->SymTab[j].UDNameLen;
-				if(pConfig->SymTab[j].Name && wcslen(pConfig->SymTab[j].Name) < sizeof(ds.Name) / sizeof(wchar_t))
-					wcscpy_s(ds.Name, pConfig->SymTab[j].Name);
-				if(pConfig->SymTab[j].UDName && wcslen(pConfig->SymTab[j].UDName) < sizeof(ds.UDName) / sizeof(wchar_t))
-					wcscpy_s(ds.UDName, pConfig->SymTab[j].UDName);
+				pConfig->SymTab[i].Name = context.marshal_as<const wchar_t*>(Globals::SymCtx->ListAllSymbols[i]->Name);
+				pConfig->SymTab[i].NameLen = wcslen(pConfig->SymTab[i].Name);
+			}
 
-				WriteFile(hSymbolCache, &ds, sizeof(DiskSymbol), NULL, NULL);
-
-				//WriteFile(hSymbolCache, pConfig->SymTab[j].Name, ds.NameLen, NULL, NULL);
-				//WriteFile(hSymbolCache, pConfig->SymTab[j].UDName, ds.UDNameLen, NULL, NULL);
+			if (!HasNoUDName)
+			{
+				pConfig->SymTab[i].UDName = context.marshal_as<const wchar_t*>(Globals::SymCtx->ListAllSymbols[i]->UDName);
+				pConfig->SymTab[i].UDNameLen = wcslen(pConfig->SymTab[i].UDName);
 			}
 		}
-		CloseHandle(hSymbolCache);
+		wprintf(L"Symbols marshaled into shared memory\n");
+
+		if (szSymbolCache)
+		{
+			DiskSymbol ds;
+			if (UseSymbolCache)
+			{
+				hSymbolCache = CreateFile(szSymbolCache, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+			}
+			else
+			{
+				wprintf(L"Caching Symbols to file %s\n", szSymbolCache);
+
+				hSymbolCache = CreateFile(szSymbolCache, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+				for (int j = 0; j < MarshaledSymbols; j++)
+				{
+					ds.Address = pConfig->SymTab[j].Address;
+					ds.Length = pConfig->SymTab[j].Length;
+					//ds.NameLen = pConfig->SymTab[j].NameLen;
+					//ds.UDNameLen = pConfig->SymTab[j].UDNameLen;
+					if (pConfig->SymTab[j].Name && wcslen(pConfig->SymTab[j].Name) < sizeof(ds.Name) / sizeof(wchar_t))
+						wcscpy_s(ds.Name, pConfig->SymTab[j].Name);
+					if (pConfig->SymTab[j].UDName && wcslen(pConfig->SymTab[j].UDName) < sizeof(ds.UDName) / sizeof(wchar_t))
+						wcscpy_s(ds.UDName, pConfig->SymTab[j].UDName);
+
+					WriteFile(hSymbolCache, &ds, sizeof(DiskSymbol), NULL, NULL);
+
+					//WriteFile(hSymbolCache, pConfig->SymTab[j].Name, ds.NameLen, NULL, NULL);
+					//WriteFile(hSymbolCache, pConfig->SymTab[j].UDName, ds.UDNameLen, NULL, NULL);
+				}
+			}
+			CloseHandle(hSymbolCache);
+		}
+		Sleep(1000);
 	}
 
-
 	// make sure our thread is keyed up.
-	Sleep(1000);
 	ResumeThread(hTestThr);
 	ResumeThread(pi.hThread);
 
@@ -203,8 +206,6 @@ int wmain(int argc, wchar_t* argv[])
 		wprintf(L"Executed command but couldn't get exit code.\nCommand=%s\n", ToRun);
 		return -3;
 	}
-
-
 	return ExitCode;
 }
 

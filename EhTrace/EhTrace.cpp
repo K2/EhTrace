@@ -42,6 +42,8 @@
 // pop/ret
 // exception handling
 // user callbacks
+// - RtlInstallFunctionTableCallback
+// - RtlAddFunctionTable 
 // *callbacks
 // threads & fiber create
 
@@ -50,6 +52,12 @@ LONG WINAPI BossLevel(struct _EXCEPTION_POINTERS *ExceptionInfo);
 LONG WINAPI vEhTracer(struct _EXCEPTION_POINTERS *ExceptionInfo);
 
 NtSystemDebugControl loadSystemDebugControl = NULL;
+
+#ifdef ALIB_BUILD 
+int ALibMain();
+extern "C" FARPROC AMain = (FARPROC)ALibMain;
+#endif
+
 BOOL GetTokenPriv(HANDLE hProcess, BOOL bEnable, wchar_t* Name);
 
 // not counting ourselves
@@ -61,6 +69,10 @@ extern "C" static DWORD NoLogThrId = 0;
 extern ExecutionBlock *CtxTable;
 extern PConfigContext ConfigMap;
 
+void Fight(PExecutionBlock pCtx);
+void InitFighters();
+
+// One time init at runtime per thread we bring into monitoring
 PExecutionBlock InitBlock(ULONG ID)
 {
 	PExecutionBlock pCtx = &CtxTable[ID];
@@ -82,6 +94,9 @@ PExecutionBlock InitBlock(ULONG ID)
 
 	pCtx->insn = cs_malloc(pCtx->handle);
 	pCtx->csLen = 32;
+
+	pCtx->Hooks = HooksConfig;
+	pCtx->HookCnt = HookCount;
 
 	return pCtx;
 }
@@ -123,12 +138,31 @@ bool InstallThread(ULONG th32ThreadID, int reason)
 	return true;
 }
 
+// check modules
+PLDR_MODULE FirstModule()
+{
+	static int LastModListCnt;
+
+	// PEB @ 0x60 ? 
+	PLDR_MODULE *TEB = (PLDR_MODULE *)__readgsqword(0x60); // + 
+	PLDR_MODULE pMod = TEB[0x10];
+	return (PLDR_MODULE ) pMod->InInitializationOrderModuleList.Flink;
+}
+
 // check all threads to make sure we are installed/configured
 // possibly dump stack and make sure this module is in the stack 
 void PulseThreads()
 {
 	DWORD thisPID = GetCurrentProcessId();
 	DWORD thisTID = GetCurrentThreadId(); //__readgsdword(0x48);
+/*
+	PLDR_MODULE first = FirstModule();
+	while (first->BaseAddress) {
+		printf("Module [%S] loaded at [%p] with entrypoint at [%p]\n", first->BaseDllName.Buffer, first->BaseAddress, first->EntryPoint);
+		first = (PLDR_MODULE)first->InMemoryOrderModuleList.Flink;
+	}
+*/
+
 	while (true)
 	{
 		Sleep(100);
@@ -154,7 +188,7 @@ void PulseThreads()
 	}
 }
 
-int Initalize()
+int Initalize(PVECTORED_EXCEPTION_HANDLER Eh)
 {
 	if (!InitThreadTable(1000 * 1000))
 		wprintf(L"unable to initialize thread tables\n");
@@ -180,7 +214,9 @@ int Initalize()
 		// I guess restore things or I should of checked the original state right? :)
 		// GetTokenPriv(GetCurrentProcess(), false, SE_DEBUG_NAME);
 	}
-
+	// get statics setup
+	InitFighters();
+	// pull static hook struct into master record for this slot
 
 	// use old school ToolHelp to enum threads
 	// count how many threads with this super beast of an API
@@ -204,11 +240,12 @@ int Initalize()
 
 	// insurance in case the VEH get's toasted
 	//SetUnhandledExceptionFilter(&BossLevel);
-
-	if (!AddVectoredExceptionHandler(1, (PVECTORED_EXCEPTION_HANDLER)vEhTracer)) {
+	if (!AddVectoredExceptionHandler(1, Eh != NULL ? Eh : (PVECTORED_EXCEPTION_HANDLER)vEhTracer)) {
 		wprintf(L"unable to install VEH handler\n");
 		return -4;
 	}
+	else
+		wprintf(L"installed VEH handler\n");
 
 	return 0;
 }
@@ -268,12 +305,12 @@ void _DumpContext(PExecutionBlock pXblock)
 	if (csRVA && pXblock && cs_disasm_iter(pXblock->handle, &csLocation, &pXblock->csLen, &csRVA, pXblock->insn))
 	{
 		printf("\n%s %s   | Rip 0x%.16llx (RipFrom 0x%.16llx) EFlags 0x%.8x ", pXblock->insn->mnemonic, pXblock->insn->op_str, pCtx->Rip, pXblock->BlockFrom, pCtx->EFlags);
-		/*_DumpEFlags(efl);
+		_DumpEFlags(efl);
 		wprintf(L"\t\t Rax 0x%.16llx, Rcx 0x%.16llx, Rdx 0x%.16llx, Rbx 0x%.16llx\n", pCtx->Rax, pCtx->Rcx, pCtx->Rdx, pCtx->Rbx);
 		wprintf(L"\t\t Rsp 0x%.16llx, Rbp 0x%.16llx, Rsi 0x%.16llx, Rdi 0x%.16llx\n", pCtx->Rsp, pCtx->Rbp, pCtx->Rsi, pCtx->Rdi);
 		wprintf(L"\t\t R8  0x%.16llx, R9  0x%.16llx, R10 0x%.16llx, R11 0x%.16llx\n", pCtx->R8, pCtx->R9, pCtx->R10, pCtx->R11);
 		wprintf(L"\t\t R12 0x%.16llx, R13 0x%.16llx, R14 0x%.16llx, R15 0x%.16llx\n", pCtx->R12, pCtx->R13, pCtx->R14, pCtx->R15);
-		*/
+
 	}
 	// just branch/single step him
 	// I'm in the same thread so this isn't that bad
@@ -281,56 +318,82 @@ void _DumpContext(PExecutionBlock pXblock)
 	// capstone!!
 	pXblock->csLen = 32;
 }
-
+/*
+	 Not really seeing the case for symbol processing in our perf critical loop
 int NativeSymbolCompare(const void *node1, const void *node2)
 {
 	return ((const PNativeSymbol)node1)->Address == ((const PNativeSymbol)node2)->Address ? 0 : -1;
 }
 
+/*
+Putting this stuff on hold for a bit waiting for open implementation of symbol parsing to mature or just stick to post processing symbols...
+PNativeSymbol pSym = (PNativeSymbol)bsearch((void *)(&ExceptionInfo->ContextRecord->Rip),(void *)ConfigMap->SymTab, ConfigMap->SymCnt, sizeof(NativeSymbol), NativeSymbolCompare);
+if (pSym == NULL)
+{
+ExitThreadTable(dwThr, false);
+return EXCEPTION_CONTINUE_SEARCH;
+}
+*/
 
+
+//ULONG64 GDIPLUS_START2, GDIPLUS_END2;
+
+
+// In the spirt of so many exceptions! =D blah! https://msdn.microsoft.com/en-us/library/1eyas8tf.aspx
 LONG WINAPI vEhTracer(PEXCEPTION_POINTERS ExceptionInfo)
 {
+	DWORD OldPerm;
 	PExecutionBlock pCtx = NULL;
+
 	ULONG64 dwThr = __readgsdword(0x48);
 
-	// check if my thread is a thread that's already entered into the VEH logging something lower on the stack
-	// this means were probably getting an exception for something we did ourselves during the logging 
-	// which is sort of pointless
-	// we could test all Exception address against known entries we provide
-	if (ExceptionInfo->ExceptionRecord->ExceptionCode != STATUS_SINGLE_STEP || AmIinThreadTable())
-		return EXCEPTION_CONTINUE_SEARCH;
 
-	// no re-entrance while servicing exceptions
-	EnterThreadTable(dwThr, false);
-
-/*	PNativeSymbol pSym = (PNativeSymbol)bsearch((void *)(&ExceptionInfo->ContextRecord->Rip),(void *)ConfigMap->SymTab, ConfigMap->SymCnt, sizeof(NativeSymbol), NativeSymbolCompare);
-	if (pSym == NULL)
-	{
-		ExitThreadTable(dwThr, false);
-		return EXCEPTION_CONTINUE_SEARCH;
-	}
-	*/
 	// TODO: just put the whole context in the array to remove an indirect anyhow
 	if (CtxTable != NULL && CtxTable[dwThr].TID != 0)
 		pCtx = &CtxTable[dwThr];
 	else
 		pCtx = InitBlock(dwThr);
 
+	// allow exec
+	//pCtx->DisabledUntil = (LPVOID)((ULONG64) ExceptionInfo->ExceptionRecord->ExceptionAddress & ~0x4095);
+	
 	pCtx->pExeption = ExceptionInfo;
 	pCtx->TSC = __rdtsc();
-	// since we like to do logging
-	LogRIP(pCtx);
 
+	// check if my thread is a thread that's already entered into the VEH logging something lower on the stack
+	// this means were probably getting an exception for something we did ourselves during the logging 
+	// which is sort of pointless
+	// we could test all Exception address against known entries we provide
+	if (AmIinThreadTable())
+		return EXCEPTION_CONTINUE_EXECUTION;
+
+
+	if (ExceptionInfo->ExceptionRecord->ExceptionCode != STATUS_SINGLE_STEP)
+		return EXCEPTION_CONTINUE_SEARCH;
+
+	// no re-entrance while servicing exceptions
+	EnterThreadTable(dwThr, false);
+
+	// since we like to do logging
+	//LogRIP(pCtx);
 	// to dump info 
 	//_DumpContext(pCtx);
 
+	// Loop through all of the block fighters
+	Fight(pCtx);
+
+	// Thanks Feryno
+	// http://x86asm.net/articles/backdoor-support-for-control-transfer-breakpoint-features/
+	// 
 	ExceptionInfo->ContextRecord->EFlags |= 0x100; // single step
 	ExceptionInfo->ContextRecord->Dr7 |= 0x300; // setup branch tracing 
 
+	// record keeping
 	pCtx->BlockFrom = ExceptionInfo->ContextRecord->Rip;
 
+	// exit lock
 	ExitThreadTable(dwThr, false);
-
+	
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
 
@@ -342,7 +405,13 @@ LONG WINAPI BossLevel(struct _EXCEPTION_POINTERS *ExceptionInfo)
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
 
+
+#ifdef ALIB_BUILD 
+int ADllMain(HMODULE hModule, DWORD reason, LPVOID reserved)
+#else
 __declspec(dllexport) int APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID reserved)
+#endif
+
 {
 	unsigned long TID = __readgsdword(0x48);
 
@@ -366,14 +435,14 @@ __declspec(dllexport) int APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID
 
 		// logger will spin the thread if logs are not picked up fast enough
 		SetupLogger(STRACE_LOG_BUFFER_SIZE);
-		Initalize();
+		Initalize(NULL);
 
 		InstallThread(TID, 2);
-		hPulseThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PulseThreads, 0, 0, NULL);
-		NoLogThrId = GetThreadId(hPulseThread);
+		//hPulseThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PulseThreads, 0, 0, NULL);
+		//NoLogThrId = GetThreadId(hPulseThread);
 
-		wprintf(L"Symbol count is %llx\n", ConfigMap->SymCnt);
-		ConnectSymbols(ConfigMap->SymCnt);
+		//wprintf(L"Symbol count is %llx\n", ConfigMap->SymCnt);
+		//ConnectSymbols(ConfigMap->SymCnt);
 
 	}
 	else if (reason == DLL_THREAD_ATTACH)
@@ -393,31 +462,35 @@ __declspec(dllexport) int APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID
 		wprintf(L"Cleaned up thread %d\n", TID);
 
 	}
+	wprintf(L"done in dllmain\n");
 	return TRUE;
 }
 
 // TODO: Block/Verify attempts to modify VEH list
 // testing against our self
+#ifdef ALIB_BUILD 
+int ALibMain()
+#else
 int main()
+#endif
 {
 	SetupLogger(STRACE_LOG_BUFFER_SIZE);
-	NoLogThrId = GetCurrentThreadId();
+	//NoLogThrId = GetCurrentThreadId();
 
 	HMODULE dNTdll = GetModuleHandleA("ntdll.dll");
 	loadSystemDebugControl = (NtSystemDebugControl)GetProcAddress(dNTdll, "NtSystemDebugControl");
 	if (loadSystemDebugControl == NULL)
 		wprintf(L"Not using NtSystemDebugControl\n");
-	
-	if (Initalize())
-		wprintf(L"Initialize failed\n");
 
-	//SetUnhandledExceptionFilter(&BossLevel);
-	
-	if (!AddVectoredExceptionHandler(1, (PVECTORED_EXCEPTION_HANDLER)vEhTracer)) {
-		wprintf(L"unable to install VEH handler\n");
-		return -4;
-	}
-	
+	if (Initalize(vEhTracer))
+		wprintf(L"Initialize failed\n");
+#ifdef ALIB_BUILD
+	printf("installing on current thread\n");
+	// this is since were a static lib attach
+	InstallThread(GetCurrentThreadId(), 9);
+	return 0;
+#endif
+
 	HANDLE hTestThr = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DoRandomTestStuff, 0, CREATE_SUSPENDED, NULL);
 
 	InstallThread(GetThreadId(hTestThr), 4);
@@ -443,4 +516,5 @@ int main()
 	}
 #endif
 	Sleep(-1);
+	return 0;
 }
