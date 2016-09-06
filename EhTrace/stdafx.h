@@ -75,6 +75,7 @@ typedef ULONG(__stdcall *NtSystemDebugControl)(DEBUG_CONTROL_CODE ControlCode, P
 typedef void FighterFunc(void *pCtx);
 
 typedef struct _HookInfo { 
+	char *Module;
 	char *Name; 
 	ULONG64 Flags; 
 	ULONG64 RIP; 

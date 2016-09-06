@@ -20,11 +20,12 @@
 #define FLAGS_RESOLVE 4 // disassemble past 1 instruction to get where static linkers join
 // blah these guys are not re-entrant safe since were keeping the RSP in here for tracking
 // so don't hook re-entrant functions yet I guess ;)
-//typedef struct _HookInfo { char *Name; ULONG64 Flags; ULONG64 RIP; ULONG64 RSP; DWORD ArgCnt; DWORD ArgRV; ULONG64 ArgLEN; BYTE* Result; }
+//typedef struct _HookInfo { char *module; char *Name; ULONG64 Flags; ULONG64 RIP; ULONG64 RSP; DWORD ArgCnt; DWORD ArgRV; ULONG64 ArgLEN; BYTE* Result; }
 // ARGLEN -1 MEANS READY/NO DATA
 HookInfo HooksConfig[] = 
 {
-	{ "CryptGenRandom", FLAGS_POST, NULL, NULL, 2, 3, 0, NULL },
+	{ "Advapi32.dll", "CryptGenRandom", FLAGS_POST, NULL, NULL, 2, 3, 0, NULL },
+	{ "KERNELBASE.dll", "WriteFile", FLAGS_PRE, NULL, NULL, 3, 2, 0, NULL },
 	//{ "CryptEncrypt", FLAGS_POST, NULL, NULL, 3, 4, 0, NULL },
 	//{ "CryptDestroyKey", FLAGS_POST, NULL, NULL, 1, 1, 0, NULL},
 	//{ "CryptDestroyHash", FLAGS_POST, NULL, NULL, 1, 1, 0, NULL },
@@ -68,11 +69,9 @@ void InitKeyFighter()
 	size_t csLen = 16;
 	DWORD64 JmpTarg = 0;
 
-	HMODULE hADVAPI32DLL = GetModuleHandleA("Advapi32.dll");
-
 	for (int i = 0; i < HookCount; i++)
 	{
-		HooksConfig[i].RIP = (ULONG64)GetProcAddress(hADVAPI32DLL, HooksConfig[i].Name);
+		HooksConfig[i].RIP = (ULONG64)GetProcAddress(GetModuleHandleA(HooksConfig[i].Module), HooksConfig[i].Name);
 #if _DEBUG
 		if (HooksConfig[i].RIP == 0)
 			printf("\n!!!FAILED GET PROC ADDRESS!!!\n");
@@ -158,6 +157,8 @@ void KeyFighter(void* px)
 	ULONG64 RIP = pCtx->pExeption->ContextRecord->Rip;
 	BYTE    *BytePtr = NULL;
 
+	static ULONG64 Cnt = 1;
+
 	for (int i = 0; i < pCtx->HookCnt; i++)
 	{
 		bool CaptureInfo = false;
@@ -198,11 +199,20 @@ void KeyFighter(void* px)
 			BytePtr = pCtx->Hooks[i].Result;
 			if (ByteCount != 0 && BytePtr != NULL)
 			{
-				printf("\n+++++++++++++++++++++++++ CAPTURED FROM %s CALL, NOW LOG TO MY ESCROW +++++++++++++++++++++++++\n", pCtx->Hooks[i].Name);
+				printf("\n+++++++++++++++++++++++++ CAPTURED FROM %s!%s CALL +++++++++++++++++++++++++\n", pCtx->Hooks[i].Module, pCtx->Hooks[i].Name);
 				for (int e = 0; e < ByteCount; e++)
 					printf("%.02x", *(BytePtr + e) & 0xff);
-				printf("\n------------------------- BACK TO NORMAL ENJOY XTRA SET OF CRYPTO KEY -------------------------\n");
+				printf("\n------------------------- BACK TO NORMAL -------------------------\n");
 			}
+
+			char LogFile[128];
+			DWORD Written;
+
+			sprintf(LogFile, "c:\\temp\\Log-%s-%s-%d", pCtx->Hooks[i].Module, pCtx->Hooks[i].Name, Cnt);
+			HANDLE hLog = CreateFileA(LogFile, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+			WriteFile(hLog, BytePtr, ByteCount, &Written, NULL);
+			CloseHandle(hLog);
+			Cnt++;
 		}
 	}
 }

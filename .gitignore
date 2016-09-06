@@ -60,3 +60,5 @@ Temporary Items
 *.xml
 *.idb
 *.idb
+*.nupkg
+*.suo
