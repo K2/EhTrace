@@ -1,8 +1,54 @@
-# Building EhTrace
+# 🏗️ Building EhTrace
+
+> **Complete guide to building EhTrace and its ecosystem from source**
+
+---
+
+## 📋 Prerequisites
+
+### Build Pipeline Overview
+
+```mermaid
+graph LR
+    subgraph Tools["🛠️ Required Tools"]
+        VS[Visual Studio<br/>2015+]
+        SDK[Windows SDK<br/>10.0+]
+        NET[.NET Framework<br/>4.5+]
+        
+        style VS fill:#e1bee7,stroke:#6a1b9a,stroke-width:3px,color:#000
+        style SDK fill:#c5cae9,stroke:#3949ab,stroke-width:3px,color:#000
+        style NET fill:#b2dfdb,stroke:#00695c,stroke-width:3px,color:#000
+    end
+    
+    subgraph Deps["📦 Dependencies (Included)"]
+        CAP[Capstone<br/>Disassembly]
+        DBG[dbghelp.dll<br/>Symbols]
+        MSAGL[MSAGL<br/>Graphs]
+        
+        style CAP fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#000
+        style DBG fill:#fff9c4,stroke:#f9a825,stroke-width:3px,color:#000
+        style MSAGL fill:#ffccbc,stroke:#d84315,stroke-width:3px,color:#000
+    end
+    
+    subgraph Output["📦 Build Output"]
+        DLL[EhTrace.dll]
+        TOOLS[Support Tools]
+        VIZ[Visualization]
+        
+        style DLL fill:#ce93d8,stroke:#7b1fa2,stroke-width:3px,color:#000
+        style TOOLS fill:#81c784,stroke:#2e7d32,stroke-width:3px,color:#000
+        style VIZ fill:#64b5f6,stroke:#1565c0,stroke-width:3px,color:#000
+    end
+    
+    Tools -->|Build| Output
+    Deps -->|Link| Output
+    
+    style Tools fill:#f3e5f5,stroke:#7b1fa2,stroke-width:4px
+    style Deps fill:#e8f5e9,stroke:#388e3c,stroke-width:4px
+    style Output fill:#e3f2fd,stroke:#1565c0,stroke-width:4px
+```
 
 This guide provides detailed instructions for building EhTrace and its associated components.
-
-## Prerequisites
 
 ### Required Software
 
@@ -26,19 +72,56 @@ The following dependencies are included in the `support/` directory:
 - **symsrv.dll** - Symbol server support
 - **MSAGL** - Microsoft Automatic Graph Layout libraries
 
-## Build Configuration
+---
+
+## 🔨 Build Configuration
+
+### Configuration Matrix
+
+```mermaid
+graph TB
+    subgraph Platform["🖥️ Platform"]
+        X86[x86<br/>32-bit]
+        X64[x64<br/>64-bit ⭐]
+        
+        style X86 fill:#ffe0b2,stroke:#e65100,stroke-width:2px,color:#000
+        style X64 fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#000
+    end
+    
+    subgraph Config["⚙️ Configuration"]
+        DEBUG[Debug<br/>Symbols + Info]
+        RELEASE[Release<br/>Optimized ⭐]
+        
+        style DEBUG fill:#fff9c4,stroke:#f9a825,stroke-width:2px,color:#000
+        style RELEASE fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#000
+    end
+    
+    subgraph Output["📦 Recommended"]
+        BEST[x64 Release<br/>Best Performance]
+        style BEST fill:#81c784,stroke:#2e7d32,stroke-width:4px,color:#fff
+    end
+    
+    X64 --> RELEASE
+    RELEASE --> BEST
+    
+    style Platform fill:#fff3e0,stroke:#e65100,stroke-width:3px
+    style Config fill:#fffde7,stroke:#f9a825,stroke-width:3px
+    style Output fill:#e8f5e9,stroke:#388e3c,stroke-width:3px
+```
 
 ### Platform Options
 
 - **x86** - 32-bit builds
-- **x64** - 64-bit builds (recommended)
+- **x64** - 64-bit builds ⭐ **(recommended)**
 
 ### Configuration Options
 
 - **Debug** - Debug build with symbols and debugging information
-- **Release** - Optimized release build
+- **Release** - Optimized release build ⭐ **(recommended)**
 
-## Building from Visual Studio
+---
+
+## 🎯 Building from Visual Studio
 
 ### Method 1: Using Visual Studio IDE
 
